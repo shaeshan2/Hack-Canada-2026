@@ -49,14 +49,36 @@ export default function Home({ listings, user, role }: HomeProps) {
   return (
     <main className="container">
       <header className="hero">
-        <h1>DeedScan</h1>
-        <p>No agent. No commission. Browse Canadian listings and message sellers directly.</p>
-        <div className="actions">
-          {!user && <a href="/api/auth/login">Log in</a>}
-          {!user && <a href="/api/auth/signup-buyer">Sign up as buyer</a>}
-          {!user && <a href="/api/auth/signup-seller">Sign up as seller</a>}
-          {user && <a href="/api/auth/logout">Log out</a>}
-          {sellerMode && <a href="/seller">Seller dashboard</a>}
+        <div className="topbar">
+          <div>
+            <h1>DeedScan</h1>
+            <p>No agent. No commission. Browse Canadian listings and message sellers directly.</p>
+          </div>
+          <details className="profile-menu">
+            <summary className="profile-trigger" aria-label="Open profile menu">
+              <span className="profile-icon">{user ? (user.name?.[0] || user.email?.[0] || "U").toUpperCase() : "?"}</span>
+              <span>{user ? "Profile" : "Account"}</span>
+            </summary>
+            <div className="profile-dropdown">
+              {!user && (
+                <>
+                  <a href="/api/auth/login">Log in</a>
+                  <a href="/api/auth/signup-buyer">Sign up as buyer</a>
+                  <a href="/api/auth/signup-seller">Sign up as seller</a>
+                </>
+              )}
+              {user && (
+                <>
+                  <p className="menu-label">{user.name || user.email}</p>
+                  <p className="menu-label">Role: {roleLabel}</p>
+                  {sellerMode && <a href="/seller">Seller dashboard</a>}
+                  <a href="/seller/verify">Seller verification</a>
+                  {currentRole === "ADMIN" && <a href="/admin/review">Admin review</a>}
+                  <a href="/api/auth/logout">Log out</a>
+                </>
+              )}
+            </div>
+          </details>
         </div>
       </header>
       {!user && (
