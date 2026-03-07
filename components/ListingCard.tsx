@@ -68,13 +68,18 @@ export default function ListingCard({
         <div className="listing-card-desc">{listing.description}</div>
       </div>
       <div className="listing-card-footer">
-        <span>Seller: {listing.seller.name || "Unknown"}</span>
-        {showMessageSeller && (
-          <a href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}>
-            Message seller
-          </a>
-        )}
-        <span>{new Date(listing.createdAt).toLocaleDateString("en-CA")}</span>
+        <div className="listing-card-actions">
+          <Link href={`/listings/${listing.id}`}>View details</Link>
+          {showMessageSeller && (
+            <a href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}>
+              Message seller
+            </a>
+          )}
+        </div>
+        <div className="listing-card-footer-meta">
+          <span>Seller: {listing.seller.name || "Unknown"}</span>
+          <span>{new Date(listing.createdAt).toLocaleDateString("en-CA")}</span>
+        </div>
       </div>
     </article>
   );

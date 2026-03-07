@@ -133,13 +133,25 @@ export default function ListingDetailPage({
     if (!listing) return;
     setIsLoadingNeighborhood(true);
     fetch(`/api/listings/${listing.id}/neighborhood`)
-      .then((res) => res.json())
-      .then((data: NeighborhoodData) => {
-        setNeighborhood(data);
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: NeighborhoodData | null) => {
+        if (
+          data &&
+          typeof data === "object" &&
+          data.scores &&
+          typeof data.scores.transit === "number" &&
+          typeof data.scores.schools === "number" &&
+          typeof data.scores.walkability === "number"
+        ) {
+          setNeighborhood(data);
+        } else {
+          setNeighborhood(null);
+        }
         setIsLoadingNeighborhood(false);
       })
       .catch((e) => {
         console.error("Could not fetch neighborhood", e);
+        setNeighborhood(null);
         setIsLoadingNeighborhood(false);
       });
   }, [listing]);
@@ -367,22 +379,31 @@ export default function ListingDetailPage({
                   </div>
                 ) : neighborhood ? (
                   <>
+                    {(() => {
+                      const scores = neighborhood.scores ?? {
+                        transit: 0,
+                        schools: 0,
+                        walkability: 0,
+                      };
+                      return (
+                        <>
                     <p className="ld-ai-summary">
                       <span className="ld-ai-sparkle">✨</span>{" "}
-                      {neighborhood.aiSummary}
+                      {neighborhood.aiSummary ||
+                        "A well-connected neighborhood with useful amenities nearby."}
                     </p>
                     <div className="ld-neighborhood-grid">
                       <div className="ld-neighborhood-scores">
                         <div className="ld-score-item">
                           <div className="ld-score-header">
                             <span>Transit</span>
-                            <span>{neighborhood.scores.transit}/100</span>
+                            <span>{scores.transit}/100</span>
                           </div>
                           <div className="ld-score-bar">
                             <div
                               className="ld-score-fill transit"
                               style={{
-                                width: `${neighborhood.scores.transit}%`,
+                                width: `${scores.transit}%`,
                               }}
                             />
                           </div>
@@ -390,13 +411,13 @@ export default function ListingDetailPage({
                         <div className="ld-score-item">
                           <div className="ld-score-header">
                             <span>Schools</span>
-                            <span>{neighborhood.scores.schools}/100</span>
+                            <span>{scores.schools}/100</span>
                           </div>
                           <div className="ld-score-bar">
                             <div
                               className="ld-score-fill schools"
                               style={{
-                                width: `${neighborhood.scores.schools}%`,
+                                width: `${scores.schools}%`,
                               }}
                             />
                           </div>
@@ -404,13 +425,13 @@ export default function ListingDetailPage({
                         <div className="ld-score-item">
                           <div className="ld-score-header">
                             <span>Walkability</span>
-                            <span>{neighborhood.scores.walkability}/100</span>
+                            <span>{scores.walkability}/100</span>
                           </div>
                           <div className="ld-score-bar">
                             <div
                               className="ld-score-fill walk"
                               style={{
-                                width: `${neighborhood.scores.walkability}%`,
+                                width: `${scores.walkability}%`,
                               }}
                             />
                           </div>
@@ -420,10 +441,13 @@ export default function ListingDetailPage({
                         <NeighborhoodMap
                           listingLat={listing.latitude}
                           listingLng={listing.longitude}
-                          pois={neighborhood.pois}
+                          pois={neighborhood.pois ?? []}
                         />
                       </div>
                     </div>
+                        </>
+                      );
+                    })()}
                   </>
                 ) : (
                   <p>Could not load neighborhood data.</p>

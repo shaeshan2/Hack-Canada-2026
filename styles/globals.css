@@ -1276,6 +1276,35 @@ img {
 .listing-card-footer {
   padding: 14px 20px;
   border-top: 1px solid var(--border-subtle);
+  display: grid;
+  gap: 10px;
+}
+
+.listing-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.listing-card-actions a {
+  flex: 1;
+  text-align: center;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.listing-card-actions a:hover {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--text-primary);
+}
+
+.listing-card-footer-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
