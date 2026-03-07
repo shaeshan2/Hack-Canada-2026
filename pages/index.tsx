@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import ListingCard from "../components/ListingCard";
 import FooterCta from "../components/FooterCta";
 import type { HomePageProps, ListingCardData } from "../types";
+import Image from "next/image";
 import {
   BUYER_STEPS,
   BUYER_VALUES,
@@ -74,7 +75,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
           content="Buy and sell homes directly in Canada. No agents, no 5% commission. Browse verified listings, chat with sellers, and keep more money in your pocket."
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/images/deedscan-nobg.png" />
       </Head>
 
       <div className="landing-container">
@@ -82,8 +83,13 @@ export default function Home({ listings, user, role }: HomePageProps) {
         <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
           <div className="section-inner">
             <a href="/" className="nav-logo">
-              <span className="logo-icon">🏠</span>
-              DeedScan
+              <Image
+                src="/images/deedscan-nobg.png"
+                alt="DeedScan logo"
+                width={32}
+                height={32}
+              />
+              <span>DeedScan</span>
             </a>
 
             <ul className="nav-links">
