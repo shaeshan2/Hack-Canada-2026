@@ -13,6 +13,7 @@ import { prisma } from "../../lib/prisma";
 import dynamic from "next/dynamic";
 import FraudBreakdownCard from "../../components/FraudBreakdownCard";
 import type { NeighborhoodData } from "../api/listings/[id]/neighborhood";
+import type { ListingDetailProps, PriceEstimateResult } from "../../types";
 
 // Leaflet uses window, so must be dynamically imported
 const NeighborhoodMap = dynamic(
@@ -22,27 +23,6 @@ const NeighborhoodMap = dynamic(
     loading: () => <div className="ld-map-loading">Loading Map...</div>,
   },
 );
-
-type ListingDetailProps = {
-  listing: {
-    id: string;
-    title: string;
-    description: string;
-    address: string;
-    price: number;
-    imageUrl: string | null;
-    sqft: number | null;
-    bedrooms: number | null;
-    confidenceScore: number | null;
-    breakdownJson: string | null;
-    flagsJson: string | null;
-    latitude: number | null;
-    longitude: number | null;
-    seller: { id: string; name: string | null; role: string };
-    photos: { id: string; url: string; order: number }[];
-  } | null;
-  user: { name?: string; email?: string } | null;
-};
 
 function cad(n: number) {
   return n.toLocaleString("en-CA", { maximumFractionDigits: 0 });
@@ -77,8 +57,6 @@ function confidenceInfo(score: number | null) {
     tip: "Low confidence — exercise caution",
   };
 }
-
-type PriceEstimateResult = { price_range: string; explanation: string } | null;
 
 export default function ListingDetailPage({
   listing,

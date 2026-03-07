@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useMemo, useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import ListingCard, { type ListingCardData } from "../components/ListingCard";
+import ListingCard from "../components/ListingCard";
+import type { HomePageProps, ListingCardData } from "../types";
 import "../lib/auth0-env";
 import { auth0 } from "../lib/auth0";
 import { prisma } from "../lib/prisma";
@@ -15,12 +16,6 @@ import {
 
 /* ── Types ──────────────────────────────────────────── */
 type ListingView = ListingCardData;
-
-type HomeProps = {
-  listings: ListingView[];
-  user: { name?: string; email?: string } | null;
-  role: "BUYER" | "SELLER_PENDING" | "SELLER_VERIFIED" | "ADMIN" | null;
-};
 
 /* ── Helpers ────────────────────────────────────────── */
 function cad(n: number) {
@@ -116,7 +111,7 @@ const SELLER_VALUES = [
 ];
 
 /* ── Component ──────────────────────────────────────── */
-export default function Home({ listings, user, role }: HomeProps) {
+export default function Home({ listings, user, role }: HomePageProps) {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [howTab, setHowTab] = useState<"buyer" | "seller">("buyer");
@@ -667,20 +662,20 @@ export default function Home({ listings, user, role }: HomeProps) {
 }
 
 /* ── Server-Side Data ───────────────────────────────── */
-export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
+export const getServerSideProps: GetServerSideProps<HomePageProps> = async ({
   req,
   res,
 }) => {
   const session = await auth0.getSession(req);
-  let user: HomeProps["user"] = null;
-  let role: HomeProps["role"] = null;
+  let user: HomePageProps["user"] = null;
+  let role: HomePageProps["role"] = null;
 
   if (session?.user) {
     const signupRole = getSignupIntentRole(req);
     const dbUser = await ensureDbUser(session.user, signupRole);
     clearSignupIntentCookie(res);
     user = { name: session.user.name, email: session.user.email };
-    role = dbUser.role as HomeProps["role"];
+    role = dbUser.role as HomePageProps["role"];
   }
 
   let listings: ListingView[] = [];

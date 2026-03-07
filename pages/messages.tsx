@@ -12,6 +12,7 @@ import {
 } from "../lib/signup-intent";
 import { useSocketOptional } from "../contexts/SocketContext";
 import type { ChatMessage } from "../contexts/SocketContext";
+import type { ConversationItem, MessagesPageProps } from "../types";
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -33,19 +34,6 @@ function dateSeparatorLabel(iso: string): string {
   if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
   return d.toLocaleDateString("en-CA", { month: "long", day: "numeric" });
 }
-
-type ConversationItem = {
-  listingId: string;
-  listing: { id: string; title: string; address: string };
-  otherUser: { id: string; name: string | null };
-  lastMessage: { content: string; createdAt: string } | null;
-  unreadCount: number;
-};
-
-type MessagesPageProps = {
-  user: { name?: string; email?: string } | null;
-  userId: string | null;
-};
 
 export default function MessagesPage({
   user,

@@ -2,31 +2,8 @@ import Head from "next/head";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
-import ListingCard, { type ListingCardData } from "../components/ListingCard";
-
-type ParsedSearch = {
-  rawQuery: string;
-  locationText: string | null;
-  lat: number | null;
-  lng: number | null;
-  radius_km: number;
-  price_min: number | null;
-  price_max: number | null;
-  bedrooms: number | null;
-};
-
-type BrowseListing = ListingCardData & {
-  id: string;
-  bedrooms: number | null;
-  sqft: number | null;
-  latitude: number | null;
-  longitude: number | null;
-  distanceKm: number;
-};
-
-type ListingApiRecord = Omit<BrowseListing, "distanceKm"> & {
-  photos?: Array<{ id: string; url: string; order: number }>;
-};
+import ListingCard from "../components/ListingCard";
+import type { BrowseListing, BrowseListingApiRecord, ParsedSearch } from "../types";
 
 type LeafletLike = {
   map: (el: HTMLElement, opts?: Record<string, unknown>) => {
@@ -138,7 +115,7 @@ export default function BrowsePage() {
         const payload = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(payload?.error ?? "Could not load listings");
       }
-      const listings = (await res.json()) as ListingApiRecord[];
+      const listings = (await res.json()) as BrowseListingApiRecord[];
       setResults(
         listings.map((listing) => ({
           ...listing,

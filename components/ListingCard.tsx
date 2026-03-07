@@ -1,21 +1,5 @@
 import Link from "next/link";
-
-export type ListingCardData = {
-  id: string;
-  title: string;
-  description: string;
-  address: string;
-  price: number;
-  confidenceScore: number | null;
-  imageUrl: string | null;
-  createdAt: string;
-  seller: {
-    id: string;
-    name: string | null;
-    email: string;
-    role?: string;
-  };
-};
+import type { ListingCardData } from "../types";
 
 type ListingCardProps = {
   listing: ListingCardData;
