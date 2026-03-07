@@ -87,16 +87,16 @@ export default async function handler(
     });
 
     const [, parsedFiles] = await new Promise<
-      [unknown, { govId?: File; ownershipProof?: File }]
+      [unknown, { govId?: File[]; ownershipProof?: File[] }]
     >((resolve, reject) => {
       form.parse(protectedReq, (err, f, files) => {
         if (err) reject(err);
-        else resolve([f, files as { govId?: File; ownershipProof?: File }]);
+        else resolve([f, files as { govId?: File[]; ownershipProof?: File[] }]);
       });
     });
 
-    const govId = parsedFiles.govId;
-    const ownershipProof = parsedFiles.ownershipProof;
+    const govId = parsedFiles.govId?.[0];
+    const ownershipProof = parsedFiles.ownershipProof?.[0];
 
     if (!govId || !govId.filepath || govId.size === 0) {
       sendValidation(

@@ -60,6 +60,25 @@ type Props = {
   adminName?: string;
 };
 
+function DocumentViewer({ title, url }: { title: string; url: string }) {
+  if (!url) return null;
+  const isPdf = url.toLowerCase().endsWith(".pdf");
+  if (isPdf) {
+    return <PdfViewer title={title} url={url} />;
+  }
+  return (
+    <div style={{ background: "var(--bg-secondary)", padding: 16, borderRadius: "var(--radius-md)", border: "1px solid var(--border-glass)" }}>
+      <h3 style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)", marginBottom: 12 }}>{title}</h3>
+      <a href={url} target="_blank" rel="noreferrer">
+        <img src={url} alt={title} style={{ width: "100%", maxHeight: 400, objectFit: "contain", borderRadius: "var(--radius-sm)" }} />
+      </a>
+      <p style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>
+        Source: <a href={url} target="_blank" rel="noreferrer">open in new tab</a>
+      </p>
+    </div>
+  );
+}
+
 function AdminReviewPage({ adminName }: Props) {
   const [pendingSellers, setPendingSellers] = useState<PendingSeller[]>([]);
   const [flaggedListings, setFlaggedListings] = useState<FlaggedListing[]>([]);
@@ -186,8 +205,7 @@ function AdminReviewPage({ adminName }: Props) {
     if (targets.length === 0) return;
     if (
       !window.confirm(
-        `Approve ${targets.length} pending seller${
-          targets.length === 1 ? "" : "s"
+        `Approve ${targets.length} pending seller${targets.length === 1 ? "" : "s"
         }?`,
       )
     ) {
@@ -928,13 +946,12 @@ function AdminReviewPage({ adminName }: Props) {
             <div className="ar-stat-card">
               <div className="ar-stat-label">Queue</div>
               <div
-                className={`ar-stat-value ar-stat-status${
-                  loading
-                    ? ""
-                    : pendingSellersCount + pendingFlagsCount === 0
-                      ? " ok"
-                      : " warn"
-                }`}
+                className={`ar-stat-value ar-stat-status${loading
+                  ? ""
+                  : pendingSellersCount + pendingFlagsCount === 0
+                    ? " ok"
+                    : " warn"
+                  }`}
               >
                 {loading
                   ? "Loading…"
@@ -980,11 +997,10 @@ function AdminReviewPage({ adminName }: Props) {
                   <span className="ar-filter-label">Status</span>
                   <button
                     type="button"
-                    className={`ar-filter-pill${
-                      sellerStatusFilter === VerificationStatus.PENDING
-                        ? " active"
-                        : ""
-                    }`}
+                    className={`ar-filter-pill${sellerStatusFilter === VerificationStatus.PENDING
+                      ? " active"
+                      : ""
+                      }`}
                     onClick={() => {
                       setSellerStatusFilter(VerificationStatus.PENDING);
                       setSelectedSubmissionId(null);
@@ -994,11 +1010,10 @@ function AdminReviewPage({ adminName }: Props) {
                   </button>
                   <button
                     type="button"
-                    className={`ar-filter-pill${
-                      sellerStatusFilter === VerificationStatus.APPROVED
-                        ? " active"
-                        : ""
-                    }`}
+                    className={`ar-filter-pill${sellerStatusFilter === VerificationStatus.APPROVED
+                      ? " active"
+                      : ""
+                      }`}
                     onClick={() => {
                       setSellerStatusFilter(VerificationStatus.APPROVED);
                       setSelectedSubmissionId(null);
@@ -1008,11 +1023,10 @@ function AdminReviewPage({ adminName }: Props) {
                   </button>
                   <button
                     type="button"
-                    className={`ar-filter-pill${
-                      sellerStatusFilter === VerificationStatus.REJECTED
-                        ? " active"
-                        : ""
-                    }`}
+                    className={`ar-filter-pill${sellerStatusFilter === VerificationStatus.REJECTED
+                      ? " active"
+                      : ""
+                      }`}
                     onClick={() => {
                       setSellerStatusFilter(VerificationStatus.REJECTED);
                       setSelectedSubmissionId(null);
@@ -1051,9 +1065,8 @@ function AdminReviewPage({ adminName }: Props) {
                       <button
                         type="button"
                         key={s.id}
-                        className={`ar-queue-item${
-                          selectedSubmissionId === s.id ? " active" : ""
-                        }`}
+                        className={`ar-queue-item${selectedSubmissionId === s.id ? " active" : ""
+                          }`}
                         onClick={() => setSelectedSubmissionId(s.id)}
                       >
                         <div className="ar-queue-item-avatar">
@@ -1071,8 +1084,7 @@ function AdminReviewPage({ adminName }: Props) {
                       </button>
                     ))
                   )}
-                ) : (
-                  </div>
+                </div>
 
                 <div className="ar-detail-panel">
                   {selectedSubmission ? (
@@ -1094,15 +1106,29 @@ function AdminReviewPage({ adminName }: Props) {
                             )}
                           </div>
                         </div>
-                        <span className="ar-pill ar-pill-pending">
-                          ⏳ Pending
-                        </span>
+                        <div>
+                          {selectedSubmission.status === VerificationStatus.PENDING && (
+                            <span className="ar-pill ar-pill-pending">
+                              ⏳ Pending
+                            </span>
+                          )}
+                          {selectedSubmission.status === VerificationStatus.APPROVED && (
+                            <span className="ar-pill ar-pill-ok">
+                              ✓ Approved
+                            </span>
+                          )}
+                          {selectedSubmission.status === VerificationStatus.REJECTED && (
+                            <span className="ar-pill ar-pill-fraud">
+                              ✕ Rejected
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="ar-card-body">
                         <div className="ar-pdf-grid">
                           <div>
                             <div className="ar-pdf-label">Government ID</div>
-                            <PdfViewer
+                            <DocumentViewer
                               title="Government ID"
                               url={selectedSubmission.govIdDocumentUrl}
                             />
@@ -1111,45 +1137,49 @@ function AdminReviewPage({ adminName }: Props) {
                             <div className="ar-pdf-label">
                               Proof of Ownership
                             </div>
-                            <PdfViewer
+                            <DocumentViewer
                               title="Proof of ownership"
                               url={selectedSubmission.ownershipProofUrl}
                             />
                           </div>
                         </div>
-                        <div className="ar-field">
-                          <label className="ar-field-label">
-                            Rejection reason{" "}
-                            <span className="ar-field-hint">
-                              (required to reject)
-                            </span>
-                          </label>
-                          <textarea
-                            className="ar-textarea"
-                            rows={3}
-                            value={sellerDecisionReason}
-                            onChange={(e) =>
-                              setSellerDecisionReason(e.target.value)
-                            }
-                            placeholder="Describe the reason for rejection…"
-                          />
-                        </div>
-                        <div className="ar-actions">
-                          <button
-                            type="button"
-                            className="ar-btn ar-btn-approve"
-                            onClick={() => decideSeller("approve")}
-                          >
-                            ✓ Approve seller
-                          </button>
-                          <button
-                            type="button"
-                            className="ar-btn ar-btn-reject"
-                            onClick={() => decideSeller("reject")}
-                          >
-                            ✕ Reject seller
-                          </button>
-                        </div>
+                        {selectedSubmission.status === VerificationStatus.PENDING && (
+                          <>
+                            <div className="ar-field">
+                              <label className="ar-field-label">
+                                Rejection reason{" "}
+                                <span className="ar-field-hint">
+                                  (required to reject)
+                                </span>
+                              </label>
+                              <textarea
+                                className="ar-textarea"
+                                rows={3}
+                                value={sellerDecisionReason}
+                                onChange={(e) =>
+                                  setSellerDecisionReason(e.target.value)
+                                }
+                                placeholder="Describe the reason for rejection…"
+                              />
+                            </div>
+                            <div className="ar-actions">
+                              <button
+                                type="button"
+                                className="ar-btn ar-btn-approve"
+                                onClick={() => decideSeller("approve")}
+                              >
+                                ✓ Approve seller
+                              </button>
+                              <button
+                                type="button"
+                                className="ar-btn ar-btn-reject"
+                                onClick={() => decideSeller("reject")}
+                              >
+                                ✕ Reject seller
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -1171,11 +1201,10 @@ function AdminReviewPage({ adminName }: Props) {
                   <span className="ar-filter-label">Status</span>
                   <button
                     type="button"
-                    className={`ar-filter-pill${
-                      flagStatusFilter === FraudFlagStatus.PENDING_REVIEW
-                        ? " active"
-                        : ""
-                    }`}
+                    className={`ar-filter-pill${flagStatusFilter === FraudFlagStatus.PENDING_REVIEW
+                      ? " active"
+                      : ""
+                      }`}
                     onClick={() => {
                       setFlagStatusFilter(FraudFlagStatus.PENDING_REVIEW);
                       setSelectedFlagId(null);
@@ -1185,11 +1214,10 @@ function AdminReviewPage({ adminName }: Props) {
                   </button>
                   <button
                     type="button"
-                    className={`ar-filter-pill${
-                      flagStatusFilter === FraudFlagStatus.APPROVED
-                        ? " active"
-                        : ""
-                    }`}
+                    className={`ar-filter-pill${flagStatusFilter === FraudFlagStatus.APPROVED
+                      ? " active"
+                      : ""
+                      }`}
                     onClick={() => {
                       setFlagStatusFilter(FraudFlagStatus.APPROVED);
                       setSelectedFlagId(null);
@@ -1199,11 +1227,10 @@ function AdminReviewPage({ adminName }: Props) {
                   </button>
                   <button
                     type="button"
-                    className={`ar-filter-pill${
-                      flagStatusFilter === FraudFlagStatus.BANNED
-                        ? " active"
-                        : ""
-                    }`}
+                    className={`ar-filter-pill${flagStatusFilter === FraudFlagStatus.BANNED
+                      ? " active"
+                      : ""
+                      }`}
                     onClick={() => {
                       setFlagStatusFilter(FraudFlagStatus.BANNED);
                       setSelectedFlagId(null);
@@ -1229,9 +1256,8 @@ function AdminReviewPage({ adminName }: Props) {
                       <button
                         type="button"
                         key={flag.id}
-                        className={`ar-queue-item${
-                          selectedFlagId === flag.id ? " active" : ""
-                        }`}
+                        className={`ar-queue-item${selectedFlagId === flag.id ? " active" : ""
+                          }`}
                         onClick={() => setSelectedFlagId(flag.id)}
                       >
                         <div
@@ -1312,26 +1338,26 @@ function AdminReviewPage({ adminName }: Props) {
 
                         {Object.keys(selectedFlag.breakdown ?? {}).length >
                           0 && (
-                          <>
-                            <div className="ar-section-label">
-                              Score breakdown
-                            </div>
-                            <div className="ar-breakdown">
-                              {Object.entries(
-                                selectedFlag.breakdown ?? {},
-                              ).map(([key, val]) => (
-                                <div key={key} className="ar-breakdown-row">
-                                  <span className="ar-breakdown-key">
-                                    {key.replace(/_/g, " ")}
-                                  </span>
-                                  <span className="ar-breakdown-val">
-                                    {val}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        )}
+                            <>
+                              <div className="ar-section-label">
+                                Score breakdown
+                              </div>
+                              <div className="ar-breakdown">
+                                {Object.entries(
+                                  selectedFlag.breakdown ?? {},
+                                ).map(([key, val]) => (
+                                  <div key={key} className="ar-breakdown-row">
+                                    <span className="ar-breakdown-key">
+                                      {key.replace(/_/g, " ")}
+                                    </span>
+                                    <span className="ar-breakdown-val">
+                                      {val}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          )}
 
                         {(selectedFlag.matchedImages ?? []).length > 0 && (
                           <>
