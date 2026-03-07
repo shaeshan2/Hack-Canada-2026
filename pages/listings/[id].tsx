@@ -49,9 +49,45 @@ function confidenceInfo(score: number | null) {
   return { label: `${score}/100 Low`, cls: "ld-badge-low", icon: "🚨", tip: "Low confidence — exercise caution" };
 }
 
+type PriceEstimateResult = { price_range: string; explanation: string } | null;
+
 export default function ListingDetailPage({ listing, user }: ListingDetailProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [neighborhood, setNeighborhood] = useState<NeighborhoodData | null>(null);
+  const [estimateLoading, setEstimateLoading] = useState(false);
+  const [estimateError, setEstimateError] = useState<string | null>(null);
+  const [estimate, setEstimate] = useState<PriceEstimateResult>(null);
+
+  async function fetchPriceEstimate() {
+    if (!listing) return;
+    setEstimateLoading(true);
+    setEstimateError(null);
+    setEstimate(null);
+    try {
+      const res = await fetch("/api/price-estimate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address: listing.address,
+          sqft: listing.sqft ?? 0,
+          bedrooms: listing.bedrooms ?? 0,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEstimateError(data.error ?? "Could not get price estimate");
+        return;
+      }
+      setEstimate({
+        price_range: data.price_range ?? "",
+        explanation: data.explanation ?? "",
+      });
+    } catch {
+      setEstimateError("Network error. Try again.");
+    } finally {
+      setEstimateLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!listing) return;
@@ -269,6 +305,27 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
             <div className="ld-price-card">
               <div className="ld-price">${cad(listing.price)}<span className="ld-price-cad"> CAD</span></div>
               <div className="ld-savings-pill">Saves ~${cad(savings)} vs. agent</div>
+
+              <div className="ld-estimate-block">
+                <button
+                  type="button"
+                  className="ld-estimate-btn"
+                  onClick={fetchPriceEstimate}
+                  disabled={estimateLoading}
+                  aria-busy={estimateLoading}
+                >
+                  {estimateLoading ? "Getting estimate…" : "Get suggested price"}
+                </button>
+                {estimateError && (
+                  <p className="ld-estimate-error" role="alert">{estimateError}</p>
+                )}
+                {estimate && !estimateLoading && (
+                  <div className="ld-estimate-result">
+                    <div className="ld-estimate-range">{estimate.price_range}</div>
+                    <p className="ld-estimate-explanation">{estimate.explanation}</p>
+                  </div>
+                )}
+              </div>
 
               {user ? (
                 <>

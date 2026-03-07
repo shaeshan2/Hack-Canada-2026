@@ -3986,6 +3986,61 @@ img {
   margin-bottom: 20px;
 }
 
+/* AI price estimate block */
+.ld-estimate-block {
+  margin-bottom: 20px;
+}
+.ld-estimate-btn {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ld-estimate-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+.ld-estimate-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.ld-estimate-error {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: #f87171;
+}
+.ld-estimate-result {
+  margin-top: 12px;
+  padding: 14px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--radius-lg);
+}
+.ld-estimate-range {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-light);
+  margin-bottom: 8px;
+}
+.ld-estimate-explanation {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
 .ld-cta-primary {
   display: block;
   width: 100%;
