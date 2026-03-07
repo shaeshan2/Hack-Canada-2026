@@ -1,9 +1,11 @@
 BEGIN TRANSACTION;
 
 -- Clean previous demo rows so reseeding stays deterministic.
+DELETE FROM "Message" WHERE "listingId" LIKE 'demo_listing_%';
 DELETE FROM "Photo" WHERE "listingId" LIKE 'demo_listing_%';
 DELETE FROM "FraudFlag" WHERE "listingId" LIKE 'demo_listing_%';
 DELETE FROM "Listing" WHERE "id" LIKE 'demo_listing_%';
+DELETE FROM "User" WHERE "id" LIKE 'demo_buyer_%';
 DELETE FROM "User" WHERE "id" LIKE 'demo_seller_%';
 DELETE FROM "User" WHERE "id" = 'demo_admin_001';
 
@@ -24,6 +26,12 @@ INSERT INTO "User" ("id", "auth0Id", "email", "name", "role", "blockedReason", "
   ('demo_seller_003', 'auth0|demo_seller_003', 'sophia.martin@deedscan.demo', 'Sophia Martin', 'SELLER_VERIFIED', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('demo_seller_004', 'auth0|demo_seller_004', 'noah.kim@deedscan.demo', 'Noah Kim', 'SELLER_VERIFIED', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('demo_seller_005', 'auth0|demo_seller_005', 'chloe.roy@deedscan.demo', 'Chloe Roy', 'SELLER_VERIFIED', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Demo buyers for chat threads.
+INSERT INTO "User" ("id", "auth0Id", "email", "name", "role", "blockedReason", "createdAt", "updatedAt") VALUES
+  ('demo_buyer_001', 'auth0|demo_buyer_001', 'ava.morgan@deedscan.demo', 'Ava Morgan', 'BUYER', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('demo_buyer_002', 'auth0|demo_buyer_002', 'lucas.brown@deedscan.demo', 'Lucas Brown', 'BUYER', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('demo_buyer_003', 'auth0|demo_buyer_003', 'mia.singh@deedscan.demo', 'Mia Singh', 'BUYER', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Demo listings across multiple cities, with varied confidence/price/bedrooms.
 INSERT INTO "Listing" (
@@ -78,5 +86,53 @@ INSERT INTO "Photo" ("id", "url", "order", "listingId", "createdAt") VALUES
   ('demo_photo_014_2', 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1400&q=80', 1, 'demo_listing_014', CURRENT_TIMESTAMP),
   ('demo_photo_015_1', 'https://images.unsplash.com/photo-1599423300746-b62533397364?auto=format&fit=crop&w=1400&q=80', 0, 'demo_listing_015', CURRENT_TIMESTAMP),
   ('demo_photo_015_2', 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1400&q=80', 1, 'demo_listing_015', CURRENT_TIMESTAMP);
+
+-- Seed conversations so /messages has realistic history + unread badges.
+INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt") VALUES
+  ('demo_msg_001', 'Hi Amelia, is the basement finished and permitted?', 1, 'demo_buyer_001', 'demo_seller_001', 'demo_listing_001', datetime('now', '-4 day')),
+  ('demo_msg_002', 'Yes, fully finished and we have city permits on file.', 1, 'demo_seller_001', 'demo_buyer_001', 'demo_listing_001', datetime('now', '-4 day', '+18 minutes')),
+  ('demo_msg_003', 'Great. Are you open to offers with a 60-day close?', 0, 'demo_buyer_001', 'demo_seller_001', 'demo_listing_001', datetime('now', '-3 day')),
+  ('demo_msg_004', 'Is parking included in this condo unit?', 1, 'demo_buyer_002', 'demo_seller_002', 'demo_listing_002', datetime('now', '-2 day')),
+  ('demo_msg_005', 'Yes, one underground spot is included.', 0, 'demo_seller_002', 'demo_buyer_002', 'demo_listing_002', datetime('now', '-2 day', '+12 minutes')),
+  ('demo_msg_006', 'Do you have recent utility costs for winter months?', 1, 'demo_buyer_003', 'demo_seller_005', 'demo_listing_005', datetime('now', '-1 day')),
+  ('demo_msg_007', 'Average is about $165/month including hydro.', 0, 'demo_seller_005', 'demo_buyer_003', 'demo_listing_005', datetime('now', '-1 day', '+9 minutes')),
+  ('demo_msg_008', 'Can we schedule a showing Saturday afternoon?', 0, 'demo_buyer_002', 'demo_seller_004', 'demo_listing_004', datetime('now', '-6 hours'));
+
+-- If test@test.com exists (local Auth0 test user), seed inbox examples for that account too.
+INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
+SELECT 'demo_msg_test_001', 'Hi, could you share the strata fees for this listing?', 0, 'demo_seller_003', u.id, 'demo_listing_003', datetime('now', '-90 minutes')
+FROM "User" u
+WHERE u.email = 'test@test.com'
+LIMIT 1;
+
+INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
+SELECT 'demo_msg_test_002', 'Absolutely, fees are $412/month and include water.', 0, u.id, 'demo_seller_003', 'demo_listing_003', datetime('now', '-75 minutes')
+FROM "User" u
+WHERE u.email = 'test@test.com'
+LIMIT 1;
+
+INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
+SELECT 'demo_msg_test_003', 'Is this townhouse still available for private showing?', 0, u.id, 'demo_seller_005', 'demo_listing_015', datetime('now', '-70 minutes')
+FROM "User" u
+WHERE u.email = 'test@test.com'
+LIMIT 1;
+
+INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
+SELECT 'demo_msg_test_004', 'Yes, we have openings this Friday and Sunday.', 0, 'demo_seller_005', u.id, 'demo_listing_015', datetime('now', '-62 minutes')
+FROM "User" u
+WHERE u.email = 'test@test.com'
+LIMIT 1;
+
+INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
+SELECT 'demo_msg_test_005', 'Can you share recent strata minutes for this condo?', 1, u.id, 'demo_seller_002', 'demo_listing_002', datetime('now', '-55 minutes')
+FROM "User" u
+WHERE u.email = 'test@test.com'
+LIMIT 1;
+
+INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
+SELECT 'demo_msg_test_006', 'Sure, I can send them after 6 PM today.', 0, 'demo_seller_002', u.id, 'demo_listing_002', datetime('now', '-49 minutes')
+FROM "User" u
+WHERE u.email = 'test@test.com'
+LIMIT 1;
 
 COMMIT;

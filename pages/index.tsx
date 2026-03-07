@@ -297,7 +297,7 @@ export default function Home({ listings, user, role }: HomeProps) {
                 <input
                   value={buyerQuery}
                   onChange={(event) => setBuyerQuery(event.target.value)}
-                  placeholder="Ask AI: 3-bed under $700k near schools in Mississauga"
+                  placeholder="E.x. 3-bed under $700k in Mississauga"
                   aria-label="Search homes with natural language"
                 />
                 <button type="submit">✨ Search using AI</button>
