@@ -7,16 +7,58 @@ import { getSignupIntentRole } from "../../../lib/signup-intent";
 import { messagesQuerySchema, parseQuery } from "../../../lib/api/validation";
 import { sendError, sendValidation } from "../../../lib/api/errors";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  if (req.method === "PATCH") {
+    return auth0.withApiAuthRequired(async function markRead(
+      protectedReq: NextApiRequest,
+      protectedRes: NextApiResponse,
+    ) {
+      const session = await auth0.getSession(protectedReq);
+      if (!session?.user) {
+        sendError(protectedRes, "Not authenticated", "UNAUTHORIZED", 401);
+        return;
+      }
+      const signupRole = getSignupIntentRole(protectedReq);
+      const dbUser = await ensureDbUser(session.user, signupRole);
+      const { listingId, otherUserId } = protectedReq.body as {
+        listingId?: string;
+        otherUserId?: string;
+      };
+      if (!listingId || !otherUserId) {
+        sendError(
+          protectedRes,
+          "listingId and otherUserId required",
+          "BAD_REQUEST",
+          400,
+        );
+        return;
+      }
+      await prisma.message.updateMany({
+        where: {
+          listingId,
+          senderId: otherUserId,
+          recipientId: dbUser.id,
+          read: false,
+        },
+        data: { read: true },
+      });
+      protectedRes.status(200).json({ ok: true });
+    })(req, res);
+    return;
+  }
+
   if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
+    res.setHeader("Allow", "GET, PATCH");
     sendError(res, "Method not allowed", "BAD_REQUEST", 405);
     return;
   }
 
   return auth0.withApiAuthRequired(async function getMessages(
     protectedReq: NextApiRequest,
-    protectedRes: NextApiResponse
+    protectedRes: NextApiResponse,
   ) {
     const session = await auth0.getSession(protectedReq);
     if (!session?.user) {

@@ -6,7 +6,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "../lib/auth0-env";
 import { auth0 } from "../lib/auth0";
 import { ensureDbUser } from "../lib/session-user";
-import { clearSignupIntentCookie, getSignupIntentRole } from "../lib/signup-intent";
+import {
+  clearSignupIntentCookie,
+  getSignupIntentRole,
+} from "../lib/signup-intent";
 import { useSocketOptional } from "../contexts/SocketContext";
 import type { ChatMessage } from "../contexts/SocketContext";
 
@@ -24,7 +27,10 @@ type MessagesPageProps = {
 
 export default function MessagesPage({ user }: MessagesPageProps) {
   const router = useRouter();
-  const { listingId, otherUserId } = router.query as { listingId?: string; otherUserId?: string };
+  const { listingId, otherUserId } = router.query as {
+    listingId?: string;
+    otherUserId?: string;
+  };
   const socket = useSocketOptional();
 
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
@@ -54,10 +60,31 @@ export default function MessagesPage({ user }: MessagesPageProps) {
     if (!user || !listingId) return;
     setLoading(true);
     const q = otherUserId ? `&otherUserId=${otherUserId}` : "";
-    fetch(`/api/messages?listingId=${listingId}${q}`, { credentials: "include" })
+    fetch(`/api/messages?listingId=${listingId}${q}`, {
+      credentials: "include",
+    })
       .then((res) => (res.ok ? res.json() : []))
       .then((list: ChatMessage[]) => {
         setMessages(list);
+        // Mark incoming messages as read
+        if (otherUserId) {
+          fetch("/api/messages", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ listingId, otherUserId }),
+          })
+            .then(() => {
+              setConversations((prev) =>
+                prev.map((c) =>
+                  c.listingId === listingId && c.otherUser.id === otherUserId
+                    ? { ...c, unreadCount: 0 }
+                    : c,
+                ),
+              );
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => setMessages([]))
       .finally(() => setLoading(false));
@@ -66,14 +93,17 @@ export default function MessagesPage({ user }: MessagesPageProps) {
   useEffect(() => {
     if (listingId && otherUserId && conversations.length > 0) {
       const c = conversations.find(
-        (x) => x.listingId === listingId && x.otherUser.id === otherUserId
+        (x) => x.listingId === listingId && x.otherUser.id === otherUserId,
       );
       setListingTitle(c?.listing.title ?? null);
     } else if (listingId && !listingTitle) {
       fetch(`/api/listings/${listingId}`, { credentials: "include" })
         .then((res) => (res.ok ? res.json() : null))
-        .then((l: { title?: string } | null) => l && setListingTitle(l.title ?? null))
-        .catch(() => { });
+        .then(
+          (l: { title?: string } | null) =>
+            l && setListingTitle(l.title ?? null),
+        )
+        .catch(() => {});
     }
   }, [listingId, otherUserId, conversations]);
 
@@ -84,8 +114,13 @@ export default function MessagesPage({ user }: MessagesPageProps) {
   useEffect(() => {
     if (!socket || !listingId || !otherUserId) return;
     const unsub = socket.subscribeNewMessage((msg) => {
-      if (msg.listingId === listingId && (msg.senderId === otherUserId || msg.recipientId === otherUserId)) {
-        setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      if (
+        msg.listingId === listingId &&
+        (msg.senderId === otherUserId || msg.recipientId === otherUserId)
+      ) {
+        setMessages((prev) =>
+          prev.some((m) => m.id === msg.id) ? prev : [...prev, msg],
+        );
       }
     });
     return unsub;
@@ -97,7 +132,7 @@ export default function MessagesPage({ user }: MessagesPageProps) {
       fetch("/api/conversations", { credentials: "include" })
         .then((res) => (res.ok ? res.json() : []))
         .then(setConversations)
-        .catch(() => { });
+        .catch(() => {});
     });
     return unsub;
   }, [socket, listingId, otherUserId]);
@@ -112,7 +147,8 @@ export default function MessagesPage({ user }: MessagesPageProps) {
       }
     });
     const unsubStop = socket.subscribeTypingStop((data) => {
-      if (data.listingId === listingId && data.userId === otherUserId) setTypingName(null);
+      if (data.listingId === listingId && data.userId === otherUserId)
+        setTypingName(null);
     });
     return () => {
       unsubTyping();
@@ -135,14 +171,22 @@ export default function MessagesPage({ user }: MessagesPageProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ recipientId: otherUserId, listingId, content: text }),
+        body: JSON.stringify({
+          recipientId: otherUserId,
+          listingId,
+          content: text,
+        }),
       })
         .then((res) => res.json())
         .then((msg) => {
-          if (msg.id) setMessages((prev) => [...prev, { ...msg, createdAt: msg.createdAt ?? new Date().toISOString() }]);
+          if (msg.id)
+            setMessages((prev) => [
+              ...prev,
+              { ...msg, createdAt: msg.createdAt ?? new Date().toISOString() },
+            ]);
           setInput("");
         })
-        .catch(() => { })
+        .catch(() => {})
         .finally(() => setSending(false));
     }
   }, [input, listingId, otherUserId, socket]);
@@ -154,7 +198,7 @@ export default function MessagesPage({ user }: MessagesPageProps) {
         handleSend();
       }
     },
-    [handleSend]
+    [handleSend],
   );
 
   if (!user) {
@@ -171,7 +215,10 @@ export default function MessagesPage({ user }: MessagesPageProps) {
     <>
       <Head>
         <title>Messages — DeedScan</title>
-        <meta name="description" content="Chat directly with buyers and sellers on DeedScan." />
+        <meta
+          name="description"
+          content="Chat directly with buyers and sellers on DeedScan."
+        />
       </Head>
       <main className="messages-page">
         <header className="messages-page-header">
@@ -185,7 +232,9 @@ export default function MessagesPage({ user }: MessagesPageProps) {
               <p>Loading…</p>
             ) : (
               <>
-                {conversations.length === 0 && !listingId && <p>No conversations yet.</p>}
+                {conversations.length === 0 && !listingId && (
+                  <p>No conversations yet.</p>
+                )}
                 {conversations.map((c) => (
                   <Link
                     key={`${c.listingId}-${c.otherUser.id}`}
@@ -194,8 +243,14 @@ export default function MessagesPage({ user }: MessagesPageProps) {
                   >
                     <strong>{c.listing.title}</strong>
                     <span>{c.otherUser.name ?? "Seller"}</span>
-                    {c.lastMessage && <span className="preview">{c.lastMessage.content.slice(0, 50)}…</span>}
-                    {c.unreadCount > 0 && <span className="unread">{c.unreadCount}</span>}
+                    {c.lastMessage && (
+                      <span className="preview">
+                        {c.lastMessage.content.slice(0, 50)}…
+                      </span>
+                    )}
+                    {c.unreadCount > 0 && (
+                      <span className="unread">{c.unreadCount}</span>
+                    )}
                   </Link>
                 ))}
               </>
@@ -204,7 +259,10 @@ export default function MessagesPage({ user }: MessagesPageProps) {
 
           <section className="chat-panel">
             {!listingId ? (
-              <p className="placeholder">Select a conversation or <Link href="/">browse listings</Link> and tap &quot;Message seller&quot;.</p>
+              <p className="placeholder">
+                Select a conversation or <Link href="/">browse listings</Link>{" "}
+                and tap &quot;Message seller&quot;.
+              </p>
             ) : (
               <>
                 <div className="chat-header">
@@ -219,13 +277,18 @@ export default function MessagesPage({ user }: MessagesPageProps) {
                     >
                       <span className="message-content">{m.content}</span>
                       <span className="message-meta">
-                        {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(m.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </span>
                     </div>
                   ))}
                   {typingName && (
                     <div className="message received typing">
-                      <span className="message-content">{typingName} is typing…</span>
+                      <span className="message-content">
+                        {typingName} is typing…
+                      </span>
                     </div>
                   )}
                   <div ref={messagesEndRef} />
@@ -237,16 +300,27 @@ export default function MessagesPage({ user }: MessagesPageProps) {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    onFocus={() => socket?.sendTypingStart(listingId, otherUserId!)}
-                    onBlur={() => socket?.sendTypingStop(listingId, otherUserId!)}
+                    onFocus={() =>
+                      socket?.sendTypingStart(listingId, otherUserId!)
+                    }
+                    onBlur={() =>
+                      socket?.sendTypingStop(listingId, otherUserId!)
+                    }
                     disabled={sending}
                   />
-                  <button type="button" onClick={handleSend} disabled={sending || !input.trim()}>
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={sending || !input.trim()}
+                  >
                     Send
                   </button>
                 </div>
                 {!socket?.connected && (
-                  <p className="reconnect-hint">Sending via server. Connect to WebSocket for real-time delivery.</p>
+                  <p className="reconnect-hint">
+                    Sending via server. Connect to WebSocket for real-time
+                    delivery.
+                  </p>
                 )}
               </>
             )}
@@ -257,7 +331,9 @@ export default function MessagesPage({ user }: MessagesPageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps<MessagesPageProps> = async ({ req, res }) => {
+export const getServerSideProps: GetServerSideProps<
+  MessagesPageProps
+> = async ({ req, res }) => {
   const session = await auth0.getSession(req);
   let user: MessagesPageProps["user"] = null;
   if (session?.user) {

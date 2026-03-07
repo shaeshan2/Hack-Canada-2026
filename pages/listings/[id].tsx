@@ -1,6 +1,7 @@
 import { GetServerSideProps } from "next";
+import Head from "next/head";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { useState } from "react";
 import "../../lib/auth0-env";
 import { auth0 } from "../../lib/auth0";
 import { ensureDbUser } from "../../lib/session-user";
@@ -27,86 +28,228 @@ type ListingDetailProps = {
   user: { name?: string; email?: string } | null;
 };
 
-function confidenceBadge(score: number | null) {
-  if (score == null) return null;
-  if (score >= 85) return { label: "Verified", class: "badge-verified" };
-  if (score >= 60) return { label: "Pending", class: "badge-pending" };
-  return { label: "Low", class: "badge-low" };
+function cad(n: number) {
+  return n.toLocaleString("en-CA", { maximumFractionDigits: 0 });
 }
 
-export default function ListingDetailPage({
-  listing,
-  user,
-}: ListingDetailProps) {
-  const router = useRouter();
+function confidenceInfo(score: number | null) {
+  if (score == null) return { label: "AI Pending", cls: "ld-badge-na", icon: "⏳", tip: "Fraud check running" };
+  if (score >= 85) return { label: `${score}/100 Verified`, cls: "ld-badge-high", icon: "🛡️", tip: "High confidence — no fraud signals" };
+  if (score >= 60) return { label: `${score}/100 Review`, cls: "ld-badge-mid", icon: "⚠️", tip: "Moderate confidence" };
+  return { label: `${score}/100 Low`, cls: "ld-badge-low", icon: "🚨", tip: "Low confidence — exercise caution" };
+}
+
+export default function ListingDetailPage({ listing, user }: ListingDetailProps) {
+  const [activeIdx, setActiveIdx] = useState(0);
+
   if (!listing) {
     return (
-      <main className="container">
-        <p>Listing not found.</p>
-        <Link href="/">Back to DeedScan</Link>
-      </main>
+      <div className="ld-notfound">
+        <h2>Listing not found</h2>
+        <Link href="/browse" className="btn btn-primary">Browse all listings</Link>
+      </div>
     );
   }
 
-  const badge = confidenceBadge(listing.confidenceScore);
   const photos = listing.photos?.length
     ? listing.photos
     : listing.imageUrl
-      ? [{ url: listing.imageUrl, id: "", order: 0 }]
+      ? [{ url: listing.imageUrl, id: "fallback", order: 0 }]
       : [];
 
+  const conf = confidenceInfo(listing.confidenceScore);
+  const savings = Math.round(listing.price * 0.05);
+  const sellerInitial = (listing.seller.name?.[0] ?? "S").toUpperCase();
+
   return (
-    <main className="container">
-      <header className="hero">
-        <Link href="/">← DeedScan</Link>
-      </header>
+    <>
+      <Head>
+        <title>{listing.title} | DeedScan</title>
+        <meta name="description" content={`${listing.address} — $${cad(listing.price)} CAD. Commission-free on DeedScan.`} />
+      </Head>
 
-      <article className="card listing-detail">
+      {/* ── Navbar ── */}
+      <nav className="ld-navbar">
+        <Link href="/" className="ld-logo">
+          <span className="logo-icon">🏠</span>DeedScan
+        </Link>
+        <div className="ld-nav-right">
+          <Link href="/browse" className="ld-nav-link">← All Listings</Link>
+          {user ? (
+            <Link href="/messages" className="ld-nav-link">💬 Messages</Link>
+          ) : (
+            <a href="/api/auth/login" className="ld-nav-btn">Log In</a>
+          )}
+        </div>
+      </nav>
+
+      <div className="ld-page">
+        {/* ── Breadcrumb ── */}
+        <div className="ld-breadcrumb">
+          <Link href="/">Home</Link>
+          <span>/</span>
+          <Link href="/browse">Listings</Link>
+          <span>/</span>
+          <span>{listing.title}</span>
+        </div>
+
+        {/* ── Photo Gallery ── */}
         {photos.length > 0 && (
-          <div className="listing-photos">
-            {photos.map((p) => (
-              <img key={p.id || p.url} src={p.url} alt={listing.title} />
-            ))}
+          <div className="ld-gallery">
+            <div className="ld-gallery-main">
+              <img src={photos[activeIdx]?.url} alt={listing.title} />
+              {photos.length > 1 && (
+                <>
+                  <button
+                    className="ld-gallery-arrow ld-gallery-prev"
+                    onClick={() => setActiveIdx((i) => (i - 1 + photos.length) % photos.length)}
+                    aria-label="Previous photo"
+                  >‹</button>
+                  <button
+                    className="ld-gallery-arrow ld-gallery-next"
+                    onClick={() => setActiveIdx((i) => (i + 1) % photos.length)}
+                    aria-label="Next photo"
+                  >›</button>
+                  <div className="ld-gallery-counter">{activeIdx + 1} / {photos.length}</div>
+                </>
+              )}
+            </div>
+            {photos.length > 1 && (
+              <div className="ld-gallery-thumbs">
+                {photos.map((p, i) => (
+                  <button
+                    key={p.id || p.url}
+                    className={`ld-thumb ${i === activeIdx ? "active" : ""}`}
+                    onClick={() => setActiveIdx(i)}
+                  >
+                    <img src={p.url} alt={`Photo ${i + 1}`} />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
-        <h1>{listing.title}</h1>
-        <p className="price">${listing.price.toLocaleString("en-CA")} CAD</p>
-        {badge && (
-          <p className={`confidence-badge ${badge.class}`}>
-            {badge.label === "Verified" && "🟢 "}
-            {badge.label === "Pending" && "🟡 "}
-            {badge.label === "Low" && "🔴 "}
-            {badge.label}
-          </p>
-        )}
-        <p>{listing.address}</p>
-        {(listing.sqft != null || listing.bedrooms != null) && (
-          <p>
-            {listing.sqft != null && `${listing.sqft} sqft`}
-            {listing.sqft != null && listing.bedrooms != null && " · "}
-            {listing.bedrooms != null && `${listing.bedrooms} bed`}
-          </p>
-        )}
-        <p>{listing.description}</p>
-        <p className="seller">Seller: {listing.seller.name || "Unknown"}</p>
 
-        {user ? (
-          <div className="actions">
-            <Link
-              href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}
-              className="button primary"
-            >
-              Message seller
-            </Link>
-            <Link href="/">Find similar</Link>
+        {/* ── Content ── */}
+        <div className="ld-content">
+          {/* ── Left ── */}
+          <div className="ld-left">
+            <div className="ld-title-row">
+              <h1 className="ld-title">{listing.title}</h1>
+              <span className={`ld-conf-badge ${conf.cls}`} title={conf.tip}>
+                {conf.icon} {conf.label}
+              </span>
+            </div>
+
+            <div className="ld-address">📍 {listing.address}</div>
+
+            {(listing.sqft != null || listing.bedrooms != null) && (
+              <div className="ld-specs">
+                {listing.bedrooms != null && (
+                  <div className="ld-spec">
+                    <span className="ld-spec-icon">🛏</span>
+                    <span className="ld-spec-value">{listing.bedrooms}</span>
+                    <span className="ld-spec-label">Bedrooms</span>
+                  </div>
+                )}
+                {listing.sqft != null && (
+                  <div className="ld-spec">
+                    <span className="ld-spec-icon">📐</span>
+                    <span className="ld-spec-value">{listing.sqft.toLocaleString()}</span>
+                    <span className="ld-spec-label">sq ft</span>
+                  </div>
+                )}
+                <div className="ld-spec">
+                  <span className="ld-spec-icon">💸</span>
+                  <span className="ld-spec-value">0%</span>
+                  <span className="ld-spec-label">Commission</span>
+                </div>
+              </div>
+            )}
+
+            <div className="ld-section">
+              <h2 className="ld-section-title">About this property</h2>
+              <p className="ld-description">{listing.description}</p>
+            </div>
+
+            <div className="ld-section">
+              <h2 className="ld-section-title">Why DeedScan?</h2>
+              <div className="ld-why-grid">
+                <div className="ld-why-item">
+                  <span>💰</span>
+                  <div>
+                    <strong>Save ~${cad(savings)}</strong>
+                    <p>No 5% agent commission on this listing</p>
+                  </div>
+                </div>
+                <div className="ld-why-item">
+                  <span>🤝</span>
+                  <div>
+                    <strong>Direct contact</strong>
+                    <p>Message the seller with no intermediaries</p>
+                  </div>
+                </div>
+                <div className="ld-why-item">
+                  <span>🛡️</span>
+                  <div>
+                    <strong>AI fraud check</strong>
+                    <p>Every listing scored for authenticity</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        ) : (
-          <p>
-            <a href="/api/auth/login">Log in</a> to message the seller.
-          </p>
-        )}
-      </article>
-    </main>
+
+          {/* ── Right (sticky card) ── */}
+          <div className="ld-right">
+            <div className="ld-price-card">
+              <div className="ld-price">${cad(listing.price)}<span className="ld-price-cad"> CAD</span></div>
+              <div className="ld-savings-pill">Saves ~${cad(savings)} vs. agent</div>
+
+              {user ? (
+                <>
+                  <Link
+                    href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}
+                    className="ld-cta-primary"
+                  >
+                    💬 Message Seller
+                  </Link>
+                  <Link href="/browse" className="ld-cta-secondary">
+                    View Similar Listings
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="ld-login-prompt">Log in to contact this seller directly</p>
+                  <a href="/api/auth/login" className="ld-cta-primary">
+                    Log In to Message
+                  </a>
+                  <a href="/api/auth/signup-buyer" className="ld-cta-secondary">
+                    Sign Up Free
+                  </a>
+                </>
+              )}
+
+              <div className="ld-seller-row">
+                <div className="ld-seller-avatar">{sellerInitial}</div>
+                <div>
+                  <div className="ld-seller-name">{listing.seller.name ?? "Verified Seller"}</div>
+                  <div className="ld-seller-tag">FSBO · No Commission</div>
+                </div>
+              </div>
+
+              <div className={`ld-conf-row ${conf.cls}`}>
+                <span>{conf.icon}</span>
+                <div>
+                  <strong>AI Score: {listing.confidenceScore ?? "—"}/100</strong>
+                  <p>{conf.tip}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -142,9 +285,21 @@ export const getServerSideProps: GetServerSideProps<
   return {
     props: {
       listing: {
-        ...listing,
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        address: listing.address,
+        price: listing.price,
+        imageUrl: listing.imageUrl,
+        sqft: listing.sqft,
+        bedrooms: listing.bedrooms,
+        confidenceScore: listing.confidenceScore,
         seller: listing.seller,
-        photos: listing.photos,
+        photos: listing.photos.map((p) => ({
+          id: p.id,
+          url: p.url,
+          order: p.order,
+        })),
       },
       user,
     },
