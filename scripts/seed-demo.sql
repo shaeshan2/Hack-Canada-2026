@@ -5,6 +5,17 @@ DELETE FROM "Photo" WHERE "listingId" LIKE 'demo_listing_%';
 DELETE FROM "FraudFlag" WHERE "listingId" LIKE 'demo_listing_%';
 DELETE FROM "Listing" WHERE "id" LIKE 'demo_listing_%';
 DELETE FROM "User" WHERE "id" LIKE 'demo_seller_%';
+DELETE FROM "User" WHERE "id" = 'demo_admin_001';
+
+-- Demo admin (use ALLOW_DB_ADMIN_FALLBACK=true to access /admin/review with this account)
+INSERT INTO "User" ("id", "auth0Id", "email", "name", "role", "blockedReason", "createdAt", "updatedAt") VALUES
+  ('demo_admin_001', 'auth0|demo_admin_001', 'admin@deedscan.demo', 'DeedScan Admin', 'ADMIN', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Ensure test@test.com (Auth0 password: Test@123) always has ADMIN role.
+-- Only updates if the row already exists (after first login). Safe to re-run anytime.
+-- Workflow: log in as test@test.com once, then re-run `npm run seed:demo`.
+UPDATE "User" SET role = 'ADMIN', updatedAt = CURRENT_TIMESTAMP
+  WHERE email = 'test@test.com';
 
 -- Demo sellers (verified so they can own listings)
 INSERT INTO "User" ("id", "auth0Id", "email", "name", "role", "blockedReason", "createdAt", "updatedAt") VALUES
