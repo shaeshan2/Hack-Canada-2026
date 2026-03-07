@@ -1,4 +1,4 @@
-# House Marketplace (Auth0 + Prisma)
+# DeedScan
 
 A basic frontend and backend where:
 - sellers can create house listings
