@@ -4,7 +4,10 @@ import { useRouter } from "next/router";
 import "../../lib/auth0-env";
 import { auth0 } from "../../lib/auth0";
 import { ensureDbUser } from "../../lib/session-user";
-import { clearSignupIntentCookie, getSignupIntentRole } from "../../lib/signup-intent";
+import {
+  clearSignupIntentCookie,
+  getSignupIntentRole,
+} from "../../lib/signup-intent";
 import { prisma } from "../../lib/prisma";
 
 type ListingDetailProps = {
@@ -31,7 +34,10 @@ function confidenceBadge(score: number | null) {
   return { label: "Low", class: "badge-low" };
 }
 
-export default function ListingDetailPage({ listing, user }: ListingDetailProps) {
+export default function ListingDetailPage({
+  listing,
+  user,
+}: ListingDetailProps) {
   const router = useRouter();
   if (!listing) {
     return (
@@ -43,7 +49,11 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
   }
 
   const badge = confidenceBadge(listing.confidenceScore);
-  const photos = listing.photos?.length ? listing.photos : listing.imageUrl ? [{ url: listing.imageUrl, id: "", order: 0 }] : [];
+  const photos = listing.photos?.length
+    ? listing.photos
+    : listing.imageUrl
+      ? [{ url: listing.imageUrl, id: "", order: 0 }]
+      : [];
 
   return (
     <main className="container">
@@ -82,7 +92,10 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
 
         {user ? (
           <div className="actions">
-            <Link href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`} className="button primary">
+            <Link
+              href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}
+              className="button primary"
+            >
               Message seller
             </Link>
             <Link href="/">Find similar</Link>
@@ -97,7 +110,9 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
   );
 }
 
-export const getServerSideProps: GetServerSideProps<ListingDetailProps> = async ({ req, res, params }) => {
+export const getServerSideProps: GetServerSideProps<
+  ListingDetailProps
+> = async ({ req, res, params }) => {
   const id = params?.id as string;
   if (!id) {
     return { notFound: true };

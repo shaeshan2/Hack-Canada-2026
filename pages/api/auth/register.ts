@@ -39,12 +39,10 @@ export default async function handler(
   const clientId = process.env.AUTH0_CLIENT_ID;
   const clientSecret = process.env.AUTH0_CLIENT_SECRET;
   if (!domain || !clientId || !clientSecret) {
-    res
-      .status(500)
-      .json({
-        error:
-          "Auth0 is not configured. Set AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET.",
-      });
+    res.status(500).json({
+      error:
+        "Auth0 is not configured. Set AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET.",
+    });
     return;
   }
 
@@ -71,17 +69,19 @@ export default async function handler(
 
   if (!authRes.ok) {
     const msg = data.description || data.error || "Signup failed";
-    console.error("[register] Auth0 signup error:", authRes.status, JSON.stringify(data));
+    console.error(
+      "[register] Auth0 signup error:",
+      authRes.status,
+      JSON.stringify(data),
+    );
     if (
       msg.toLowerCase().includes("already") ||
       msg.toLowerCase().includes("exists")
     ) {
-      res
-        .status(409)
-        .json({
-          error:
-            "An account with this email already exists. Try logging in instead.",
-        });
+      res.status(409).json({
+        error:
+          "An account with this email already exists. Try logging in instead.",
+      });
       return;
     }
     res.status(400).json({ error: msg });

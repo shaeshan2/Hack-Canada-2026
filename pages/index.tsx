@@ -7,7 +7,10 @@ import "../lib/auth0-env";
 import { auth0 } from "../lib/auth0";
 import { prisma } from "../lib/prisma";
 import { ensureDbUser } from "../lib/session-user";
-import { clearSignupIntentCookie, getSignupIntentRole } from "../lib/signup-intent";
+import {
+  clearSignupIntentCookie,
+  getSignupIntentRole,
+} from "../lib/signup-intent";
 
 /* ── Types ──────────────────────────────────────────── */
 type ListingView = {
@@ -86,18 +89,50 @@ const SELLER_STEPS = [
 
 /* ── Buyer Value Props ──────────────────────────────── */
 const BUYER_VALUES = [
-  { icon: "🤝", title: "Direct Seller Access", desc: "Talk to the person who actually owns the home. No agents playing phone tag." },
-  { icon: "🤖", title: "AI Confidence Scores", desc: "Every listing gets a fraud-check confidence rating so you browse with peace of mind." },
-  { icon: "🚫", title: "No Hidden Fees", desc: "Agent commissions inflate home prices. We remove that markup entirely." },
-  { icon: "⚡", title: "Real-Time Chat", desc: "Instant messaging with sellers. Ask about the leaky faucet before it becomes your problem." },
+  {
+    icon: "🤝",
+    title: "Direct Seller Access",
+    desc: "Talk to the person who actually owns the home. No agents playing phone tag.",
+  },
+  {
+    icon: "🤖",
+    title: "AI Confidence Scores",
+    desc: "Every listing gets a fraud-check confidence rating so you browse with peace of mind.",
+  },
+  {
+    icon: "🚫",
+    title: "No Hidden Fees",
+    desc: "Agent commissions inflate home prices. We remove that markup entirely.",
+  },
+  {
+    icon: "⚡",
+    title: "Real-Time Chat",
+    desc: "Instant messaging with sellers. Ask about the leaky faucet before it becomes your problem.",
+  },
 ];
 
 /* ── Seller Value Props ─────────────────────────────── */
 const SELLER_VALUES = [
-  { icon: "💸", title: "Zero Commission", desc: "Keep every dollar of your sale. The average Canadian saves $40,000+ on an $800K home." },
-  { icon: "📲", title: "QR-Powered Signs", desc: "Your for-sale sign becomes interactive. Buyers scan and see your full listing instantly." },
-  { icon: "🛡️", title: "Verified Listings", desc: "Our verification system builds trust. Buyers know your listing is legitimate." },
-  { icon: "🎯", title: "Full Control", desc: "Set your price, manage inquiries, and close on your timeline. No agent telling you what to do." },
+  {
+    icon: "💸",
+    title: "Zero Commission",
+    desc: "Keep every dollar of your sale. The average Canadian saves $40,000+ on an $800K home.",
+  },
+  {
+    icon: "📲",
+    title: "QR-Powered Signs",
+    desc: "Your for-sale sign becomes interactive. Buyers scan and see your full listing instantly.",
+  },
+  {
+    icon: "🛡️",
+    title: "Verified Listings",
+    desc: "Our verification system builds trust. Buyers know your listing is legitimate.",
+  },
+  {
+    icon: "🎯",
+    title: "Full Control",
+    desc: "Set your price, manage inquiries, and close on your timeline. No agent telling you what to do.",
+  },
 ];
 
 /* ── Component ──────────────────────────────────────── */
@@ -111,9 +146,12 @@ export default function Home({ listings, user, role }: HomeProps) {
   const calcRef = useRef<HTMLDivElement>(null);
 
   const roleLabel =
-    role === "SELLER_VERIFIED" ? "Verified Seller"
-      : role === "SELLER_PENDING" ? "Seller (Pending)"
-        : role === "ADMIN" ? "Admin"
+    role === "SELLER_VERIFIED"
+      ? "Verified Seller"
+      : role === "SELLER_PENDING"
+        ? "Seller (Pending)"
+        : role === "ADMIN"
+          ? "Admin"
           : "Buyer";
 
   useEffect(() => {
@@ -124,7 +162,9 @@ export default function Home({ listings, user, role }: HomeProps) {
 
   useEffect(() => {
     document.body.style.overflow = showRoleModal ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [showRoleModal]);
 
   const savings = Math.round(homePrice * COMMISSION_RATE);
@@ -152,38 +192,76 @@ export default function Home({ listings, user, role }: HomeProps) {
             </a>
 
             <ul className="nav-links">
-              <li><a href="#how-it-works">How It Works</a></li>
-              <li><a href="#for-buyers">For Buyers</a></li>
-              <li><a href="#for-sellers">For Sellers</a></li>
-              <li><a href="#listings">Listings</a></li>
+              <li>
+                <a href="#how-it-works">How It Works</a>
+              </li>
+              <li>
+                <a href="#for-buyers">For Buyers</a>
+              </li>
+              <li>
+                <a href="#for-sellers">For Sellers</a>
+              </li>
+              <li>
+                <a href="#listings">Listings</a>
+              </li>
             </ul>
 
             <div className="nav-auth">
               {!user ? (
                 <>
                   <div className="nav-login-dropdown">
-                    <button type="button" className="nav-btn nav-btn-ghost" aria-haspopup="true" aria-expanded="false">
+                    <button
+                      type="button"
+                      className="nav-btn nav-btn-ghost"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                    >
                       Log In
                     </button>
                     <div className="nav-login-dropdown-menu" role="menu">
-                      <a href="/api/auth/login-buyer" className="nav-login-dropdown-item" role="menuitem">As a Buyer</a>
-                      <a href="/api/auth/login-seller" className="nav-login-dropdown-item" role="menuitem">As a Seller</a>
+                      <a
+                        href="/api/auth/login-buyer"
+                        className="nav-login-dropdown-item"
+                        role="menuitem"
+                      >
+                        As a Buyer
+                      </a>
+                      <a
+                        href="/api/auth/login-seller"
+                        className="nav-login-dropdown-item"
+                        role="menuitem"
+                      >
+                        As a Seller
+                      </a>
                     </div>
                   </div>
-                  <button className="nav-btn nav-btn-primary" onClick={() => setShowRoleModal(true)}>Get Started</button>
+                  <button
+                    className="nav-btn nav-btn-primary"
+                    onClick={() => setShowRoleModal(true)}
+                  >
+                    Get Started
+                  </button>
                 </>
               ) : (
                 <>
                   {role === "SELLER_VERIFIED" && (
-                    <a href="/seller" className="nav-btn nav-btn-ghost">Dashboard</a>
+                    <a href="/seller" className="nav-btn nav-btn-ghost">
+                      Dashboard
+                    </a>
                   )}
-                  <a href="/messages" className="nav-btn nav-btn-ghost">Messages</a>
-                  <a href="/api/auth/logout" className="nav-btn nav-btn-ghost">Log Out</a>
+                  <a href="/messages" className="nav-btn nav-btn-ghost">
+                    Messages
+                  </a>
+                  <a href="/api/auth/logout" className="nav-btn nav-btn-ghost">
+                    Log Out
+                  </a>
                 </>
               )}
             </div>
 
-            <button className="nav-mobile-toggle" aria-label="Menu">☰</button>
+            <button className="nav-mobile-toggle" aria-label="Menu">
+              ☰
+            </button>
           </div>
         </nav>
 
@@ -199,11 +277,13 @@ export default function Home({ listings, user, role }: HomeProps) {
                 Canada&#39;s commission-free marketplace
               </div>
               <h1>
-                Scan the Sign.<br />
+                Scan the Sign.
+                <br />
                 <span className="highlight">Skip the Agent.</span>
               </h1>
               <p className="hero-subtitle">
-                Buy and sell homes directly. No commissions. No middlemen. Just verified listings.
+                Buy and sell homes directly. No commissions. No middlemen. Just
+                verified listings.
               </p>
               <form
                 className="hero-search-inline"
@@ -217,7 +297,7 @@ export default function Home({ listings, user, role }: HomeProps) {
                 <input
                   value={buyerQuery}
                   onChange={(event) => setBuyerQuery(event.target.value)}
-                  placeholder='3-bed under $700k near schools in Mississauga'
+                  placeholder="3-bed under $700k near schools in Mississauga"
                   aria-label="Search homes with natural language"
                 />
                 <button type="submit">Search Homes</button>
@@ -276,17 +356,29 @@ export default function Home({ listings, user, role }: HomeProps) {
               </div>
               <div className="account-actions">
                 {role === "SELLER_VERIFIED" && (
-                  <a href="/seller" className="btn btn-primary" style={{ padding: "10px 20px", fontSize: "0.875rem" }}>
+                  <a
+                    href="/seller"
+                    className="btn btn-primary"
+                    style={{ padding: "10px 20px", fontSize: "0.875rem" }}
+                  >
                     Seller Dashboard
                   </a>
                 )}
                 {role === "SELLER_PENDING" && (
-                  <a href="/seller/verify" className="btn btn-outline" style={{ padding: "10px 20px", fontSize: "0.875rem" }}>
+                  <a
+                    href="/seller/verify"
+                    className="btn btn-outline"
+                    style={{ padding: "10px 20px", fontSize: "0.875rem" }}
+                  >
                     Complete Verification
                   </a>
                 )}
                 {role === "ADMIN" && (
-                  <a href="/admin/review" className="btn btn-outline" style={{ padding: "10px 20px", fontSize: "0.875rem" }}>
+                  <a
+                    href="/admin/review"
+                    className="btn btn-outline"
+                    style={{ padding: "10px 20px", fontSize: "0.875rem" }}
+                  >
                     Admin Panel
                   </a>
                 )}
@@ -302,7 +394,9 @@ export default function Home({ listings, user, role }: HomeProps) {
               <div className="section-tag">💰 Savings Calculator</div>
               <h2>See How Much You&apos;ll Save</h2>
               <p>
-                Agents typically charge 5% commission. On a Canadian home, that&#39;s tens of thousands of dollars. With DeedScan, you keep it all.
+                Agents typically charge 5% commission. On a Canadian home,
+                that&#39;s tens of thousands of dollars. With DeedScan, you keep
+                it all.
               </p>
             </div>
 
@@ -317,8 +411,12 @@ export default function Home({ listings, user, role }: HomeProps) {
                     type="text"
                     value={`$${cad(homePrice)}`}
                     onChange={(e) => {
-                      const num = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
-                      if (!isNaN(num) && num >= 0) setHomePrice(Math.min(num, 10000000));
+                      const num = parseInt(
+                        e.target.value.replace(/[^0-9]/g, ""),
+                        10,
+                      );
+                      if (!isNaN(num) && num >= 0)
+                        setHomePrice(Math.min(num, 10000000));
                     }}
                   />
                   <input
@@ -332,7 +430,14 @@ export default function Home({ listings, user, role }: HomeProps) {
                     aria-label="Home price slider"
                   />
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: "0.8rem",
+                    color: "var(--text-muted)",
+                  }}
+                >
                   <span>$100K</span>
                   <span>$5M</span>
                 </div>
@@ -365,7 +470,10 @@ export default function Home({ listings, user, role }: HomeProps) {
             <div className="section-header animate-in">
               <div className="section-tag">🧩 How It Works</div>
               <h2>Simple, Transparent, Direct</h2>
-              <p>Whether you&#39;re buying or selling, DeedScan keeps it straightforward.</p>
+              <p>
+                Whether you&#39;re buying or selling, DeedScan keeps it
+                straightforward.
+              </p>
             </div>
 
             <div className="how-tabs animate-in animate-in-delay-1">
@@ -385,7 +493,10 @@ export default function Home({ listings, user, role }: HomeProps) {
 
             <div className="how-steps">
               {steps.map((step, i) => (
-                <div key={`${howTab}-${i}`} className={`step-card animate-in animate-in-delay-${i + 1}`}>
+                <div
+                  key={`${howTab}-${i}`}
+                  className={`step-card animate-in animate-in-delay-${i + 1}`}
+                >
                   <span className="step-icon">{step.icon}</span>
                   <div className="step-number">{i + 1}</div>
                   <h3>{step.title}</h3>
@@ -402,11 +513,17 @@ export default function Home({ listings, user, role }: HomeProps) {
             <div className="section-header animate-in">
               <div className="section-tag">🏡 For Buyers</div>
               <h2>Buy Smarter. Save More.</h2>
-              <p>Direct access to sellers means lower prices, faster responses, and zero agent markup.</p>
+              <p>
+                Direct access to sellers means lower prices, faster responses,
+                and zero agent markup.
+              </p>
             </div>
             <div className="value-grid">
               {BUYER_VALUES.map((v, i) => (
-                <div key={i} className={`value-card animate-in animate-in-delay-${i + 1}`}>
+                <div
+                  key={i}
+                  className={`value-card animate-in animate-in-delay-${i + 1}`}
+                >
                   <div className="value-card-icon">{v.icon}</div>
                   <div>
                     <h3>{v.title}</h3>
@@ -419,16 +536,25 @@ export default function Home({ listings, user, role }: HomeProps) {
         </section>
 
         {/* ── For Sellers ─────────────────────────── */}
-        <section className="value-section" id="for-sellers" style={{ background: "var(--bg-primary)" }}>
+        <section
+          className="value-section"
+          id="for-sellers"
+          style={{ background: "var(--bg-primary)" }}
+        >
           <div className="section-inner">
             <div className="section-header animate-in">
               <div className="section-tag">📣 For Sellers</div>
               <h2>List Free. Sell Direct. Keep Everything.</h2>
-              <p>Your home, your sale, your profit. No agent taking a 5% cut.</p>
+              <p>
+                Your home, your sale, your profit. No agent taking a 5% cut.
+              </p>
             </div>
             <div className="value-grid">
               {SELLER_VALUES.map((v, i) => (
-                <div key={i} className={`value-card animate-in animate-in-delay-${i + 1}`}>
+                <div
+                  key={i}
+                  className={`value-card animate-in animate-in-delay-${i + 1}`}
+                >
                   <div className="value-card-icon">{v.icon}</div>
                   <div>
                     <h3>{v.title}</h3>
@@ -446,7 +572,10 @@ export default function Home({ listings, user, role }: HomeProps) {
             <div className="section-header animate-in">
               <div className="section-tag">📍 Live Listings</div>
               <h2>Explore Properties</h2>
-              <p>Browse verified, commission-free listings from real Canadian homeowners.</p>
+              <p>
+                Browse verified, commission-free listings from real Canadian
+                homeowners.
+              </p>
             </div>
 
             {listings.length > 0 ? (
@@ -454,34 +583,59 @@ export default function Home({ listings, user, role }: HomeProps) {
                 {listings.map((listing, i) => {
                   const badge = confidenceLabel(listing.confidenceScore);
                   return (
-                    <article key={listing.id} className={`listing-card animate-in animate-in-delay-${(i % 3) + 1}`}>
+                    <article
+                      key={listing.id}
+                      className={`listing-card animate-in animate-in-delay-${(i % 3) + 1}`}
+                    >
                       {listing.imageUrl ? (
-                        <img className="listing-card-image" src={listing.imageUrl} alt={listing.title} />
+                        <img
+                          className="listing-card-image"
+                          src={listing.imageUrl}
+                          alt={listing.title}
+                        />
                       ) : (
                         <div className="listing-card-image-placeholder">🏠</div>
                       )}
                       <div className="listing-card-body">
                         <div className="listing-card-meta">
                           <span className={`confidence-badge ${badge.cls}`}>
-                            {badge.cls === "high" ? "✓ " : badge.cls === "low" ? "⚠ " : ""}
+                            {badge.cls === "high"
+                              ? "✓ "
+                              : badge.cls === "low"
+                                ? "⚠ "
+                                : ""}
                             {badge.text}
                           </span>
                         </div>
-                        <div className="listing-card-price">${cad(listing.price)} CAD</div>
-                        <div className="listing-card-title">
-                          <Link href={`/listings/${listing.id}`}>{listing.title}</Link>
+                        <div className="listing-card-price">
+                          ${cad(listing.price)} CAD
                         </div>
-                        <div className="listing-card-address">📍 {listing.address}</div>
-                        <div className="listing-card-desc">{listing.description}</div>
+                        <div className="listing-card-title">
+                          <Link href={`/listings/${listing.id}`}>
+                            {listing.title}
+                          </Link>
+                        </div>
+                        <div className="listing-card-address">
+                          📍 {listing.address}
+                        </div>
+                        <div className="listing-card-desc">
+                          {listing.description}
+                        </div>
                       </div>
                       <div className="listing-card-footer">
                         <span>Seller: {listing.seller.name || "Unknown"}</span>
                         {user && (
-                          <a href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}>
+                          <a
+                            href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}
+                          >
                             Message seller
                           </a>
                         )}
-                        <span>{new Date(listing.createdAt).toLocaleDateString("en-CA")}</span>
+                        <span>
+                          {new Date(listing.createdAt).toLocaleDateString(
+                            "en-CA",
+                          )}
+                        </span>
                       </div>
                     </article>
                   );
@@ -490,7 +644,11 @@ export default function Home({ listings, user, role }: HomeProps) {
             ) : (
               <div className="empty-listings animate-in">
                 <p>No listings yet — be the first to list!</p>
-                <a href="/api/auth/signup-seller" className="btn btn-primary" style={{ marginTop: 16 }}>
+                <a
+                  href="/api/auth/signup-seller"
+                  className="btn btn-primary"
+                  style={{ marginTop: 16 }}
+                >
                   List Your Property →
                 </a>
               </div>
@@ -502,7 +660,10 @@ export default function Home({ listings, user, role }: HomeProps) {
         <section className="footer-cta">
           <div className="section-inner animate-in">
             <h2>Ready to Skip the Middleman?</h2>
-            <p>Join thousands of Canadians who are buying and selling homes commission-free.</p>
+            <p>
+              Join thousands of Canadians who are buying and selling homes
+              commission-free.
+            </p>
             <div className="footer-cta-buttons">
               <a href="/api/auth/signup-buyer" className="btn btn-primary">
                 Sign Up as Buyer →
@@ -531,26 +692,42 @@ export default function Home({ listings, user, role }: HomeProps) {
 
       {/* ── Role Selection Modal ───────────────── */}
       {showRoleModal && (
-        <div className="role-modal-overlay" onClick={() => setShowRoleModal(false)}>
+        <div
+          className="role-modal-overlay"
+          onClick={() => setShowRoleModal(false)}
+        >
           <div className="role-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="role-modal-close" onClick={() => setShowRoleModal(false)} aria-label="Close">
+            <button
+              className="role-modal-close"
+              onClick={() => setShowRoleModal(false)}
+              aria-label="Close"
+            >
               ✕
             </button>
             <div className="role-modal-header">
               <h2>How will you use DeedScan?</h2>
-              <p>Choose your role to get started — you can always explore both later.</p>
+              <p>
+                Choose your role to get started — you can always explore both
+                later.
+              </p>
             </div>
             <div className="role-cards">
               <a href="/api/auth/signup-buyer" className="role-card">
                 <div className="role-card-icon">🏡</div>
                 <h3>I&apos;m a Buyer</h3>
-                <p>Browse listings, message sellers directly, and find your next home commission-free.</p>
+                <p>
+                  Browse listings, message sellers directly, and find your next
+                  home commission-free.
+                </p>
                 <span className="role-card-arrow">Get started →</span>
               </a>
               <a href="/api/auth/signup-seller" className="role-card">
                 <div className="role-card-icon">📣</div>
                 <h3>I&apos;m a Seller</h3>
-                <p>List your property, get a QR yard sign, and keep 100% of your sale — zero commission.</p>
+                <p>
+                  List your property, get a QR yard sign, and keep 100% of your
+                  sale — zero commission.
+                </p>
                 <span className="role-card-arrow">Get started →</span>
               </a>
             </div>
@@ -562,7 +739,10 @@ export default function Home({ listings, user, role }: HomeProps) {
 }
 
 /* ── Server-Side Data ───────────────────────────────── */
-export const getServerSideProps: GetServerSideProps<HomeProps> = async ({ req, res }) => {
+export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
+  req,
+  res,
+}) => {
   const session = await auth0.getSession(req);
   let user: HomeProps["user"] = null;
   let role: HomeProps["role"] = null;
@@ -584,7 +764,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({ req, r
       orderBy: { createdAt: "desc" },
     });
 
-    listings = raw.map((l: typeof raw[number]) => ({
+    listings = raw.map((l: (typeof raw)[number]) => ({
       id: l.id,
       title: l.title,
       description: l.description,
