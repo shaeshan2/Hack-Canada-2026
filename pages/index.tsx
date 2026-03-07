@@ -182,12 +182,11 @@ export default function Home({ listings, user, role }: HomeProps) {
                 Canada&#39;s commission-free marketplace
               </div>
               <h1>
-                Own Your Home.<br />
-                <span className="highlight">Not Their Commission.</span>
+                Scan the Sign.<br />
+                <span className="highlight">Skip the Agent.</span>
               </h1>
               <p className="hero-subtitle">
-                DeedScan connects buyers and sellers directly — no agents, no 5% commission, no middlemen.
-                Just real homes, real people, and real savings.
+                Buy and sell homes directly. No commissions. No middlemen. Just verified listings.
               </p>
               <div className="hero-ctas">
                 <a href="#listings" className="btn btn-primary">
