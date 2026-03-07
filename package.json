@@ -14,11 +14,11 @@
     "seed:demo": "prisma db execute --file scripts/seed-demo.sql"
   },
   "dependencies": {
-    "@auth0/nextjs-auth0": "^3.5.0",
+    "@auth0/nextjs-auth0": "^4.16.0",
     "@prisma/adapter-better-sqlite3": "^7.4.2",
     "@prisma/client": "^7.4.2",
     "formidable": "^3.5.1",
-    "jose": "^5.9.6",
+    "jose": "^6.2.0",
     "next": "^16.1.6",
     "pdfjs-dist": "^5.5.207",
     "qrcode": "^1.5.4",
@@ -35,9 +35,9 @@
     "@types/qrcode": "^1.5.5",
     "@types/react": "^18.3.5",
     "dotenv": "^17.3.1",
-    "eslint": "^8.57.1",
+    "eslint": "^10.0.3",
     "eslint-config-next": "^16.1.6",
-    "prisma": "^6.19.2",
+    "prisma": "^7.4.2",
     "typescript": "^5.9.3"
   }
 }

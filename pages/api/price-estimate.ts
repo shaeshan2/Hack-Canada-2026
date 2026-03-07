@@ -30,12 +30,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               {
                 parts: [
                   {
-                    text: `You are a real estate analyst for Canadian markets. Given this property:
+                    text: `You are a real estate analyst. Given this property:
 - Address: ${address}
 - Size: ${sqft} sqft
 - Bedrooms: ${bedrooms}
 
-Search recent sold prices within 1km, school ratings, transit, and suggest a fair listing price range in CAD with brief reasoning. Reply in JSON only: { "price_range": "$X - $Y", "explanation": "..." }`,
+Search recent sold prices within 1km, check school ratings, transit scores, and suggest a fair listing price range with reasoning.
+
+Return JSON only with this exact shape:
+{ "price_range": "$650,000 - $720,000", "explanation": "..." }`,
                   },
                 ],
               },
@@ -54,7 +57,7 @@ Search recent sold prices within 1km, school ratings, transit, and suggest a fai
         const parsedJson = JSON.parse(text) as { price_range?: string; explanation?: string };
         res.status(200).json({
           price_range: parsedJson.price_range ?? "$500,000 - $750,000",
-          explanation: parsedJson.explanation ?? "AI-generated estimate based on local market.",
+          explanation: parsedJson.explanation ?? "AI-generated estimate based on local market data and amenities.",
         });
         return;
       }
