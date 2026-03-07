@@ -11,7 +11,9 @@
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed:demo": "prisma db execute --file scripts/seed-demo.sql"
+    "seed:demo": "prisma db execute --file scripts/seed-demo.sql",
+    "promote:admin": "node scripts/promote.js admin",
+    "promote:seller": "node scripts/promote.js seller"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^4.16.0",
