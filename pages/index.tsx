@@ -138,19 +138,40 @@ export default function Home({ listings, user, role }: HomePageProps) {
                   </button>
                 </>
               ) : (
-                <>
-                  {role === "SELLER_VERIFIED" && (
-                    <a href="/seller" className="nav-btn nav-btn-ghost">
-                      Dashboard
+                <div className="nav-user-menu">
+                  <div className="nav-user-info">
+                    <div className="nav-user-avatar">
+                      {(user.name?.[0] || user.email?.[0] || "U").toUpperCase()}
+                    </div>
+                    <div className="nav-user-details">
+                      <div className="nav-user-name">{user.name || user.email}</div>
+                      <div className="nav-user-role">{roleLabel}</div>
+                    </div>
+                  </div>
+                  <div className="nav-user-actions">
+                    {role === "SELLER_VERIFIED" && (
+                      <a href="/seller" className="nav-btn nav-btn-primary nav-btn-sm">
+                        Dashboard
+                      </a>
+                    )}
+                    {role === "SELLER_PENDING" && (
+                      <a href="/seller/verify" className="nav-btn nav-btn-outline nav-btn-sm">
+                        Verify
+                      </a>
+                    )}
+                    {role === "ADMIN" && (
+                      <a href="/admin/review" className="nav-btn nav-btn-primary nav-btn-sm">
+                        Dashboard
+                      </a>
+                    )}
+                    <a href="/messages" className="nav-btn nav-btn-ghost nav-btn-sm">
+                      Messages
                     </a>
-                  )}
-                  <a href="/messages" className="nav-btn nav-btn-ghost">
-                    Messages
-                  </a>
-                  <a href="/api/auth/logout" className="nav-btn nav-btn-ghost">
-                    Log Out
-                  </a>
-                </>
+                    <a href="/api/auth/logout" className="nav-btn nav-btn-ghost nav-btn-sm">
+                      Log Out
+                    </a>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -159,6 +180,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
             </button>
           </div>
         </nav>
+
 
         {/* ── Hero ────────────────────────────────── */}
         <section className="hero">
@@ -235,53 +257,6 @@ export default function Home({ listings, user, role }: HomePageProps) {
             </div>
           </div>
         </section>
-
-        {/* ── Logged-in Account Banner ────────────── */}
-        {user && (
-          <section className="section-inner" style={{ paddingTop: 24 }}>
-            <div className="account-banner animate-in">
-              <div className="account-info">
-                <div className="account-avatar">
-                  {(user.name?.[0] || user.email?.[0] || "U").toUpperCase()}
-                </div>
-                <div>
-                  <div className="account-name">{user.name || user.email}</div>
-                  <div className="account-role">{roleLabel}</div>
-                </div>
-              </div>
-              <div className="account-actions">
-                {role === "SELLER_VERIFIED" && (
-                  <a
-                    href="/seller"
-                    className="btn btn-primary"
-                    style={{ padding: "10px 20px", fontSize: "0.875rem" }}
-                  >
-                    Seller Dashboard
-                  </a>
-                )}
-                {role === "SELLER_PENDING" && (
-                  <a
-                    href="/seller/verify"
-                    className="btn btn-outline"
-                    style={{ padding: "10px 20px", fontSize: "0.875rem" }}
-                  >
-                    Complete Verification
-                  </a>
-                )}
-                {role === "ADMIN" && (
-                  <a
-                    href="/admin/review"
-                    className="btn btn-outline"
-                    style={{ padding: "10px 20px", fontSize: "0.875rem" }}
-                  >
-                    Admin Panel
-                  </a>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* ── Savings Calculator ──────────────────── */}
         <section className="savings-section" ref={calcRef}>
           <div className="section-inner">

@@ -100,7 +100,7 @@ function ListingsTab({ listings }: { listings: MyListing[] }) {
                 View
               </a>
               <button
-                className="sd-listing-btn"
+                className="sd-listing-btn sd-listing-btn-qr"
                 disabled={loadingQr === l.id}
                 onClick={() => downloadQr(l.id)}
               >
