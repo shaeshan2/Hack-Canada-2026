@@ -10,7 +10,11 @@ function parseCookies(req: IncomingMessage): Record<string, string> {
   return raw.split(";").reduce<Record<string, string>>((acc, chunk) => {
     const [key, ...rest] = chunk.trim().split("=");
     if (!key || rest.length === 0) return acc;
-    acc[key] = decodeURIComponent(rest.join("="));
+    try {
+      acc[key] = decodeURIComponent(rest.join("="));
+    } catch {
+      acc[key] = rest.join("=");
+    }
     return acc;
   }, {});
 }
@@ -25,6 +29,6 @@ export function getSignupIntentRole(req: IncomingMessage): Role | undefined {
 export function clearSignupIntentCookie(res: ServerResponse) {
   res.setHeader(
     "Set-Cookie",
-    `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
+    `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
   );
 }

@@ -3,7 +3,10 @@ import { prisma } from "../../../lib/prisma";
 import { listingIdParamSchema, parseQuery } from "../../../lib/api/validation";
 import { sendError, sendNotFound } from "../../../lib/api/errors";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     sendError(res, "Method not allowed", "BAD_REQUEST", 405);
@@ -19,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const listing = await prisma.listing.findUnique({
     where: { id: parsed.data.id },
     include: {
-      seller: { select: { id: true, name: true, email: true } },
+      seller: { select: { id: true, name: true } },
       photos: { orderBy: { order: "asc" } },
     },
   });

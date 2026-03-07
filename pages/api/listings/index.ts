@@ -9,7 +9,10 @@ import { createListingSchema, parseBody } from "../../../lib/api/validation";
 import { sendError, sendValidation } from "../../../lib/api/errors";
 import { runFraudCheck } from "../../../lib/api/fraud-check";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method === "GET") {
     const listings = await prisma.listing.findMany({
       include: {
@@ -17,7 +20,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           select: {
             id: true,
             name: true,
-            email: true,
           },
         },
         photos: { orderBy: { order: "asc" } },
@@ -31,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "POST") {
     return auth0.withApiAuthRequired(async function createListing(
       protectedReq: NextApiRequest,
-      protectedRes: NextApiResponse
+      protectedRes: NextApiResponse,
     ) {
       const session = await auth0.getSession(protectedReq);
       if (!session?.user) {
@@ -42,7 +44,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const signupRole = getSignupIntentRole(protectedReq);
       const dbUser = await ensureDbUser(session.user, signupRole);
       if (dbUser.role !== Role.SELLER_VERIFIED) {
-        sendError(protectedRes, "Only verified sellers can create listings", "FORBIDDEN", 403);
+        sendError(
+          protectedRes,
+          "Only verified sellers can create listings",
+          "FORBIDDEN",
+          403,
+        );
         return;
       }
 
@@ -55,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const firstPhotoUrl = data.photoUrls?.length
         ? data.photoUrls[0]
-        : data.imageUrl ?? null;
+        : (data.imageUrl ?? null);
 
       const listing = await prisma.listing.create({
         data: {
@@ -96,7 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const withPhotos = await prisma.listing.findUnique({
         where: { id: listing.id },
         include: {
-          seller: { select: { id: true, name: true, email: true } },
+          seller: { select: { id: true, name: true } },
           photos: { orderBy: { order: "asc" } },
         },
       });
@@ -104,9 +111,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       protectedRes.status(201).json({
         ...withPhotos,
         confidenceScore: withPhotos?.confidenceScore ?? confidenceScore,
-        badge: withPhotos?.confidenceScore != null
-          ? (withPhotos.confidenceScore >= 85 ? "verified" : withPhotos.confidenceScore >= 60 ? "pending" : "low")
-          : badge,
+        badge:
+          withPhotos?.confidenceScore != null
+            ? withPhotos.confidenceScore >= 85
+              ? "verified"
+              : withPhotos.confidenceScore >= 60
+                ? "pending"
+                : "low"
+            : badge,
       });
     })(req, res);
   }

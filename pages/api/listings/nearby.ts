@@ -8,7 +8,7 @@ function haversineKm(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ): number {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -37,11 +37,14 @@ type NearbyListingRecord = {
   confidenceScore: number | null;
   createdAt: Date;
   updatedAt: Date;
-  seller: { id: string; name: string | null; email: string };
+  seller: { id: string; name: string | null };
   photos: Array<{ id: string; url: string; order: number }>;
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     sendError(res, "Method not allowed", "BAD_REQUEST", 405);
@@ -58,7 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Bounding box prefilter for Prisma/SQLite before exact Haversine filtering.
   const latDelta = radius / 111;
-  const lngDelta = radius / (111 * Math.max(Math.cos((lat * Math.PI) / 180), 0.01));
+  const lngDelta =
+    radius / (111 * Math.max(Math.cos((lat * Math.PI) / 180), 0.01));
 
   const where: Prisma.ListingWhereInput = {
     latitude: { not: null, gte: lat - latDelta, lte: lat + latDelta },
@@ -77,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const listings = (await prisma.listing.findMany({
     where,
     include: {
-      seller: { select: { id: true, name: true, email: true } },
+      seller: { select: { id: true, name: true } },
       photos: { orderBy: { order: "asc" } },
     },
     orderBy: { createdAt: "desc" },
@@ -85,7 +89,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const result = listings
     .map((listing) => {
-      const distanceKm = haversineKm(lat, lng, listing.latitude!, listing.longitude!);
+      const distanceKm = haversineKm(
+        lat,
+        lng,
+        listing.latitude!,
+        listing.longitude!,
+      );
       return { listing, distanceKm };
     })
     .filter((item) => item.distanceKm <= radius)

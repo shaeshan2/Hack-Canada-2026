@@ -10,17 +10,22 @@
  * - On message: stores DB record + broadcasts to recipient
  * - On disconnect: leaves joined rooms
  */
-require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+require("dotenv").config({
+  path: require("path").resolve(__dirname, "../.env"),
+});
 const http = require("http");
 const { Server } = require("socket.io");
 const { PrismaClient } = require("@prisma/client");
+const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
 
-const prisma = new PrismaClient();
+const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 const PORT = Number(process.env.WS_PORT) || 3001;
 const BASE_URL = process.env.AUTH0_BASE_URL || "http://localhost:3000";
-const AUTH0_ISSUER =
-  (process.env.AUTH0_ISSUER_BASE_URL || (process.env.AUTH0_DOMAIN ? `https://${process.env.AUTH0_DOMAIN}` : ""))
-    .replace(/\/+$/, "");
+const AUTH0_ISSUER = (
+  process.env.AUTH0_ISSUER_BASE_URL ||
+  (process.env.AUTH0_DOMAIN ? `https://${process.env.AUTH0_DOMAIN}` : "")
+).replace(/\/+$/, "");
 let jwksCache = null;
 
 const server = http.createServer();
@@ -49,11 +54,13 @@ async function verifyAuth0Jwt(token) {
 
   const { createRemoteJWKSet, jwtVerify } = await import("jose");
   if (!jwksCache) {
-    jwksCache = createRemoteJWKSet(new URL(`${AUTH0_ISSUER}/.well-known/jwks.json`));
+    jwksCache = createRemoteJWKSet(
+      new URL(`${AUTH0_ISSUER}/.well-known/jwks.json`),
+    );
   }
 
   const { payload } = await jwtVerify(token, jwksCache, {
-    issuer: `${AUTH0_ISSUER}/`
+    issuer: `${AUTH0_ISSUER}/`,
   });
   return payload;
 }
@@ -61,7 +68,10 @@ async function verifyAuth0Jwt(token) {
 io.on("connection", async (socket) => {
   const token = socket.handshake.query?.token;
   if (!token || typeof token !== "string") {
-    socket.emit("error", { code: "AUTH_REQUIRED", message: "Auth0 JWT token required in query string" });
+    socket.emit("error", {
+      code: "AUTH_REQUIRED",
+      message: "Auth0 JWT token required in query string",
+    });
     socket.disconnect(true);
     return;
   }
@@ -71,7 +81,10 @@ io.on("connection", async (socket) => {
     const payload = await verifyAuth0Jwt(token);
     const auth0Id = payload.sub;
     if (!auth0Id || typeof auth0Id !== "string") {
-      socket.emit("error", { code: "INVALID_TOKEN", message: "Token missing subject claim" });
+      socket.emit("error", {
+        code: "INVALID_TOKEN",
+        message: "Token missing subject claim",
+      });
       socket.disconnect(true);
       return;
     }
@@ -89,7 +102,10 @@ io.on("connection", async (socket) => {
     socketToUser.set(socket.id, { userId, name: user.name });
   } catch (err) {
     console.error("[WS] Token verification error:", err);
-    socket.emit("error", { code: "SERVER_ERROR", message: "Verification failed" });
+    socket.emit("error", {
+      code: "SERVER_ERROR",
+      message: "Verification failed",
+    });
     socket.disconnect(true);
     return;
   }
@@ -103,13 +119,13 @@ io.on("connection", async (socket) => {
   try {
     const history = await prisma.message.findMany({
       where: {
-        OR: [{ senderId: userId }, { recipientId: userId }]
+        OR: [{ senderId: userId }, { recipientId: userId }],
       },
       select: {
         listingId: true,
         senderId: true,
-        recipientId: true
-      }
+        recipientId: true,
+      },
     });
     for (const m of history) {
       const otherUser = m.senderId === userId ? m.recipientId : m.senderId;
@@ -127,8 +143,17 @@ io.on("connection", async (socket) => {
   socket.on("send_message", async (data) => {
     const { recipientId, listingId, content } = data || {};
     const senderId = socketToUser.get(socket.id)?.userId;
-    if (!senderId || !recipientId || !listingId || typeof content !== "string" || !content.trim()) {
-      socket.emit("error", { code: "VALIDATION", message: "Invalid send_message payload" });
+    if (
+      !senderId ||
+      !recipientId ||
+      !listingId ||
+      typeof content !== "string" ||
+      !content.trim()
+    ) {
+      socket.emit("error", {
+        code: "VALIDATION",
+        message: "Invalid send_message payload",
+      });
       return;
     }
 
@@ -138,11 +163,17 @@ io.on("connection", async (socket) => {
         select: { sellerId: true },
       });
       if (!listing) {
-        socket.emit("error", { code: "NOT_FOUND", message: "Listing not found" });
+        socket.emit("error", {
+          code: "NOT_FOUND",
+          message: "Listing not found",
+        });
         return;
       }
       if (recipientId !== listing.sellerId) {
-        socket.emit("error", { code: "FORBIDDEN", message: "Recipient must be the listing seller" });
+        socket.emit("error", {
+          code: "FORBIDDEN",
+          message: "Recipient must be the listing seller",
+        });
         return;
       }
 
@@ -173,7 +204,10 @@ io.on("connection", async (socket) => {
       io.to(`user:${recipientId}`).emit("new_message", payload);
     } catch (err) {
       console.error("[WS] send_message error:", err);
-      socket.emit("error", { code: "SERVER_ERROR", message: "Failed to save message" });
+      socket.emit("error", {
+        code: "SERVER_ERROR",
+        message: "Failed to save message",
+      });
     }
   });
 
@@ -192,7 +226,10 @@ io.on("connection", async (socket) => {
     const { listingId, recipientId } = data || {};
     const senderId = socketToUser.get(socket.id)?.userId;
     if (!senderId || !recipientId || !listingId) return;
-    io.to(`user:${recipientId}`).emit("typing_stop", { listingId, userId: senderId });
+    io.to(`user:${recipientId}`).emit("typing_stop", {
+      listingId,
+      userId: senderId,
+    });
   });
 
   socket.on("disconnect", () => {

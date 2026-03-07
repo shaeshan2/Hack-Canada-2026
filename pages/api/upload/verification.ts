@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import formidable, { type File } from "formidable";
@@ -9,19 +10,34 @@ import { sendError, sendValidation } from "../../../lib/api/errors";
 import { config as appConfig } from "../../../lib/config";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
 
 export const config = {
   api: { bodyParser: false },
 };
 
-function safeFilename(original: string, suffix: string): string {
-  const ext = path.extname(original) || (original.toLowerCase().endsWith(".pdf") ? ".pdf" : ".jpg");
-  const base = Date.now().toString(36) + "-" + suffix + Math.random().toString(36).slice(2, 6);
-  return base + ext;
+const ALLOWED_VERIFICATION_EXTS: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+  "application/pdf": ".pdf",
+};
+
+function safeFilename(suffix: string, mimetype: string | null): string {
+  const ext = (mimetype && ALLOWED_VERIFICATION_EXTS[mimetype]) ?? ".jpg";
+  const rand = crypto.randomBytes(16).toString("hex");
+  return `${Date.now().toString(36)}-${suffix}-${rand}${ext}`;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     res.status(405).json({ error: "Method not allowed" });
@@ -30,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return auth0.withApiAuthRequired(async function upload(
     protectedReq: NextApiRequest,
-    protectedRes: NextApiResponse
+    protectedRes: NextApiResponse,
   ) {
     const session = await auth0.getSession(protectedReq);
     if (!session?.user) {
@@ -39,12 +55,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const dbUser = await ensureDbUser(session.user);
-    if (dbUser.role !== Role.SELLER_PENDING && dbUser.role !== Role.SELLER_VERIFIED) {
+    if (
+      dbUser.role !== Role.SELLER_PENDING &&
+      dbUser.role !== Role.SELLER_VERIFIED
+    ) {
       sendError(
         protectedRes,
         "Sign up as a seller first to upload verification documents",
         "FORBIDDEN",
-        403
+        403,
       );
       return;
     }
@@ -67,7 +86,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    const [, parsedFiles] = await new Promise<[unknown, { govId?: File; ownershipProof?: File }]>((resolve, reject) => {
+    const [, parsedFiles] = await new Promise<
+      [unknown, { govId?: File; ownershipProof?: File }]
+    >((resolve, reject) => {
       form.parse(protectedReq, (err, f, files) => {
         if (err) reject(err);
         else resolve([f, files as { govId?: File; ownershipProof?: File }]);
@@ -78,17 +99,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const ownershipProof = parsedFiles.ownershipProof;
 
     if (!govId || !govId.filepath || govId.size === 0) {
-      sendValidation(protectedRes, "Government ID document is required (PDF or image)");
+      sendValidation(
+        protectedRes,
+        "Government ID document is required (PDF or image)",
+      );
       return;
     }
-    if (!ownershipProof || !ownershipProof.filepath || ownershipProof.size === 0) {
-      sendValidation(protectedRes, "Proof of ownership document is required (PDF or image)");
+    if (
+      !ownershipProof ||
+      !ownershipProof.filepath ||
+      ownershipProof.size === 0
+    ) {
+      sendValidation(
+        protectedRes,
+        "Proof of ownership document is required (PDF or image)",
+      );
       return;
     }
 
     const publicPath = appConfig.optional.uploadDir.replace(/^public\/?/, "");
-    const govIdName = safeFilename(govId.originalFilename || "gov-id", "gov");
-    const ownershipName = safeFilename(ownershipProof.originalFilename || "ownership", "own");
+    const govIdName = safeFilename("gov", govId.mimetype ?? null);
+    const ownershipName = safeFilename("own", ownershipProof.mimetype ?? null);
 
     const govIdDest = path.join(uploadDir, govIdName);
     const ownershipDest = path.join(uploadDir, ownershipName);

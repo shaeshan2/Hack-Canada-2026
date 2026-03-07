@@ -227,7 +227,7 @@ export default function Home({ listings, user, role }: HomeProps) {
                 <a href="/browse">browse all listings</a>.
               </p>
               <div className="hero-ctas">
-                <a href="/signup/seller" className="btn btn-outline">
+                <a href="/api/auth/signup-seller" className="btn btn-outline">
                   List Your Property
                 </a>
               </div>
@@ -475,7 +475,7 @@ export default function Home({ listings, user, role }: HomeProps) {
                         <div className="listing-card-desc">{listing.description}</div>
                       </div>
                       <div className="listing-card-footer">
-                        <span>Seller: {listing.seller.name || listing.seller.email}</span>
+                        <span>Seller: {listing.seller.name || "Unknown"}</span>
                         {user && (
                           <a href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}>
                             Message seller
@@ -490,7 +490,7 @@ export default function Home({ listings, user, role }: HomeProps) {
             ) : (
               <div className="empty-listings animate-in">
                 <p>No listings yet — be the first to list!</p>
-                <a href="/signup/seller" className="btn btn-primary" style={{ marginTop: 16 }}>
+                <a href="/api/auth/signup-seller" className="btn btn-primary" style={{ marginTop: 16 }}>
                   List Your Property →
                 </a>
               </div>
@@ -504,10 +504,10 @@ export default function Home({ listings, user, role }: HomeProps) {
             <h2>Ready to Skip the Middleman?</h2>
             <p>Join thousands of Canadians who are buying and selling homes commission-free.</p>
             <div className="footer-cta-buttons">
-              <a href="/signup/buyer" className="btn btn-primary">
+              <a href="/api/auth/signup-buyer" className="btn btn-primary">
                 Sign Up as Buyer →
               </a>
-              <a href="/signup/seller" className="btn btn-outline">
+              <a href="/api/auth/signup-seller" className="btn btn-outline">
                 Sign Up as Seller →
               </a>
             </div>
@@ -541,13 +541,13 @@ export default function Home({ listings, user, role }: HomeProps) {
               <p>Choose your role to get started — you can always explore both later.</p>
             </div>
             <div className="role-cards">
-              <a href="/signup/buyer" className="role-card">
+              <a href="/api/auth/signup-buyer" className="role-card">
                 <div className="role-card-icon">🏡</div>
                 <h3>I&apos;m a Buyer</h3>
                 <p>Browse listings, message sellers directly, and find your next home commission-free.</p>
                 <span className="role-card-arrow">Get started →</span>
               </a>
-              <a href="/signup/seller" className="role-card">
+              <a href="/api/auth/signup-seller" className="role-card">
                 <div className="role-card-icon">📣</div>
                 <h3>I&apos;m a Seller</h3>
                 <p>List your property, get a QR yard sign, and keep 100% of your sale — zero commission.</p>

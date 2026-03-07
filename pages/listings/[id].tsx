@@ -18,7 +18,7 @@ type ListingDetailProps = {
     sqft: number | null;
     bedrooms: number | null;
     confidenceScore: number | null;
-    seller: { id: string; name: string | null; email: string };
+    seller: { id: string; name: string | null };
     photos: { id: string; url: string; order: number }[];
   } | null;
   user: { name?: string; email?: string } | null;
@@ -78,7 +78,7 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
           </p>
         )}
         <p>{listing.description}</p>
-        <p className="seller">Seller: {listing.seller.name || listing.seller.email}</p>
+        <p className="seller">Seller: {listing.seller.name || "Unknown"}</p>
 
         {user ? (
           <div className="actions">
