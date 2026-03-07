@@ -1,3 +1,4 @@
+import { FraudFlagStatus } from "@prisma/client";
 import { prisma } from "../prisma";
 
 /**
@@ -35,15 +36,44 @@ export async function runFraudCheck(listingId: string): Promise<{
     data: { confidenceScore: clamped },
   });
 
+  const breakdown = {
+    perceptualHash,
+    reverseImage,
+    exifMatch,
+    priceSanity,
+    addressValid,
+  };
+
+  const matchedImages =
+    perceptualHash < 92 && listing.imageUrl
+      ? [listing.imageUrl]
+      : [];
+
+  if (clamped < 60) {
+    await prisma.fraudFlag.upsert({
+      where: { listingId },
+      create: {
+        listingId,
+        status: FraudFlagStatus.PENDING_REVIEW,
+        confidenceScore: clamped,
+        breakdownJson: JSON.stringify(breakdown),
+        matchedImagesJson: JSON.stringify(matchedImages)
+      },
+      update: {
+        status: FraudFlagStatus.PENDING_REVIEW,
+        confidenceScore: clamped,
+        breakdownJson: JSON.stringify(breakdown),
+        matchedImagesJson: JSON.stringify(matchedImages),
+        reviewedAt: null,
+        reviewedById: null,
+        notes: null
+      }
+    });
+  }
+
   return {
     confidenceScore: clamped,
     badge,
-    breakdown: {
-      perceptualHash,
-      reverseImage,
-      exifMatch,
-      priceSanity,
-      addressValid,
-    },
+    breakdown,
   };
 }

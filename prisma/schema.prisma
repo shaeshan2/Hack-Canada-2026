@@ -19,6 +19,18 @@ enum BlockedReason {
   FAKE_DOCS
 }
 
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum FraudFlagStatus {
+  PENDING_REVIEW
+  APPROVED
+  BANNED
+}
+
 model User {
   id        String    @id @default(cuid())
   auth0Id   String    @unique
@@ -29,6 +41,9 @@ model User {
   listings  Listing[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+  verificationSubmissions SellerVerificationSubmission[] @relation("SellerVerificationUser")
+  reviewedVerifications   SellerVerificationSubmission[] @relation("SellerVerificationReviewer")
+  reviewedFraudFlags      FraudFlag[]                    @relation("FraudFlagReviewer")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -47,6 +62,7 @@ model Listing {
   confidenceScore Int?     // 0-100; null = not yet run
   sellerId        String
   seller          User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  fraudFlag       FraudFlag?
   photos          Photo[]
   messages        Message[]
   createdAt       DateTime @default(now())
@@ -73,4 +89,33 @@ model Message {
   listingId   String
   listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+}
+
+model SellerVerificationSubmission {
+  id                 String             @id @default(cuid())
+  userId             String
+  user               User               @relation("SellerVerificationUser", fields: [userId], references: [id], onDelete: Cascade)
+  govIdDocumentUrl   String
+  ownershipProofUrl  String
+  status             VerificationStatus @default(PENDING)
+  rejectionReason    String?
+  submittedAt        DateTime           @default(now())
+  reviewedAt         DateTime?
+  reviewedById       String?
+  reviewedBy         User?              @relation("SellerVerificationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+}
+
+model FraudFlag {
+  id                String          @id @default(cuid())
+  listingId         String          @unique
+  listing           Listing         @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  status            FraudFlagStatus @default(PENDING_REVIEW)
+  confidenceScore   Int
+  breakdownJson     String?
+  matchedImagesJson String?
+  notes             String?
+  createdAt         DateTime        @default(now())
+  reviewedAt        DateTime?
+  reviewedById      String?
+  reviewedBy        User?           @relation("FraudFlagReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 }
