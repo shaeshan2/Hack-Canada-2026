@@ -307,6 +307,18 @@ export default function BrowsePage() {
     void runSearch(trimmed);
   }
 
+  function resetFilters() {
+    setManualPriceMin("");
+    setManualPriceMax("");
+    setManualBedrooms("");
+    setManualRadius("");
+    if (query.trim()) {
+      void runSearch(query.trim());
+      return;
+    }
+    void loadAllListings();
+  }
+
   return (
     <>
       <Head>
@@ -358,52 +370,79 @@ export default function BrowsePage() {
 
           <section className="buyer-browse-layout animate-in animate-in-delay-2">
             <aside className="buyer-filters">
-              <h2>Filters</h2>
-              <label>
-                Price Min
-                <input
-                  type="number"
-                  value={manualPriceMin}
-                  onChange={(e) => setManualPriceMin(e.target.value)}
-                  placeholder={parsed?.price_min?.toString() ?? "Any"}
-                />
-              </label>
-              <label>
-                Price Max
-                <input
-                  type="number"
-                  value={manualPriceMax}
-                  onChange={(e) => setManualPriceMax(e.target.value)}
-                  placeholder={parsed?.price_max?.toString() ?? "Any"}
-                />
-              </label>
-              <label>
-                Bedrooms
-                <input
-                  type="number"
-                  min={0}
-                  value={manualBedrooms}
-                  onChange={(e) => setManualBedrooms(e.target.value)}
-                  placeholder={parsed?.bedrooms?.toString() ?? "Any"}
-                />
-              </label>
-              <label>
-                Radius (km)
-                <input
-                  type="number"
-                  min={1}
-                  value={manualRadius}
-                  onChange={(e) => setManualRadius(e.target.value)}
-                />
-              </label>
-              <button
-                type="button"
-                className="btn btn-outline buyer-apply-btn"
-                onClick={() => (query.trim() ? void runSearch(query.trim()) : void loadAllListings())}
-                disabled={loading}
-              >
-                Apply
-              </button>
+              <div className="buyer-filters-head">
+                <h2>Refine Results</h2>
+                <p>Adjust budget, home size, and distance in one place.</p>
+              </div>
+
+              <div className="buyer-filter-block">
+                <p className="buyer-filter-title">Price Range (CAD)</p>
+                <div className="buyer-filter-grid">
+                  <label>
+                    Min
+                    <input
+                      type="number"
+                      value={manualPriceMin}
+                      onChange={(e) => setManualPriceMin(e.target.value)}
+                      placeholder={parsed?.price_min?.toString() ?? "No minimum"}
+                    />
+                  </label>
+                  <label>
+                    Max
+                    <input
+                      type="number"
+                      value={manualPriceMax}
+                      onChange={(e) => setManualPriceMax(e.target.value)}
+                      placeholder={parsed?.price_max?.toString() ?? "No maximum"}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="buyer-filter-block">
+                <p className="buyer-filter-title">Home Details</p>
+                <div className="buyer-filter-grid">
+                  <label>
+                    Bedrooms
+                    <input
+                      type="number"
+                      min={0}
+                      value={manualBedrooms}
+                      onChange={(e) => setManualBedrooms(e.target.value)}
+                      placeholder={parsed?.bedrooms?.toString() ?? "Any"}
+                    />
+                  </label>
+                  <label>
+                    Radius (km)
+                    <input
+                      type="number"
+                      min={1}
+                      value={manualRadius}
+                      onChange={(e) => setManualRadius(e.target.value)}
+                      placeholder={parsed?.radius_km?.toString() ?? "10"}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="buyer-filter-actions">
+                <button
+                  type="button"
+                  className="btn btn-outline buyer-apply-btn"
+                  onClick={() => (query.trim() ? void runSearch(query.trim()) : void loadAllListings())}
+                  disabled={loading}
+                >
+                  Apply Filters
+                </button>
+                <button
+                  type="button"
+                  className="buyer-filter-reset"
+                  onClick={resetFilters}
+                  disabled={loading}
+                >
+                  Reset
+                </button>
+              </div>
             </aside>
 
             <section className="buyer-results">

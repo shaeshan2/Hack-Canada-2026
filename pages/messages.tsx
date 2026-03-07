@@ -259,10 +259,13 @@ export default function MessagesPage({ user }: MessagesPageProps) {
 
           <section className="chat-panel">
             {!listingId ? (
-              <p className="placeholder">
-                Select a conversation or <Link href="/">browse listings</Link>{" "}
-                and tap &quot;Message seller&quot;.
-              </p>
+              <div className="placeholder">
+                <p className="placeholder-title">No chat selected</p>
+                <p className="placeholder-copy">
+                  Select a conversation, or <Link href="/">browse listings</Link>{" "}
+                  and tap &quot;Message seller&quot; to start one.
+                </p>
+              </div>
             ) : (
               <>
                 <div className="chat-header">

@@ -1823,13 +1823,28 @@ img {
 
 .chat-panel>.placeholder {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
   height: 100%;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 0.95rem;
-  padding: 24px;
-  text-align: center;
+  padding: 28px;
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: left;
+  gap: 0.5rem;
+  line-height: 1.55;
+}
+
+.chat-panel>.placeholder .placeholder-title {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.chat-panel>.placeholder .placeholder-copy {
+  color: var(--text-muted);
 }
 
 .chat-panel>.placeholder a {
@@ -2508,16 +2523,54 @@ img {
   gap: 0.8rem;
 }
 
+.buyer-filters-head {
+  display: grid;
+  gap: 0.35rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
 .buyer-filters h2 {
   font-size: 1rem;
   letter-spacing: 0.02em;
 }
 
+.buyer-filters-head p {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.buyer-filter-block {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.buyer-filter-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.buyer-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
 .buyer-filters label {
   display: grid;
   gap: 0.4rem;
-  font-size: 0.92rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
+}
+
+.buyer-filter-actions {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
 }
 
 .buyer-apply-btn {
@@ -2525,6 +2578,20 @@ img {
   display: inline-flex;
   justify-content: center;
   text-align: center;
+}
+
+.buyer-filter-reset {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.25rem 0;
+  cursor: pointer;
+}
+
+.buyer-filter-reset:hover {
+  color: var(--text-primary);
 }
 
 .buyer-results {
@@ -2661,6 +2728,10 @@ img {
 
   .buyer-search-bar {
     display: block;
+  }
+
+  .buyer-filter-grid {
+    grid-template-columns: 1fr;
   }
 
   .buyer-browse-title-row {
