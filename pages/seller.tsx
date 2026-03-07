@@ -3,32 +3,73 @@ import Head from "next/head";
 import Link from "next/link";
 import { FormEvent, useRef, useState } from "react";
 import { auth0 } from "../lib/auth0";
+import { prisma } from "../lib/prisma";
 import { ensureDbUser } from "../lib/session-user";
-import { clearSignupIntentCookie, getSignupIntentRole } from "../lib/signup-intent";
+import {
+  clearSignupIntentCookie,
+  getSignupIntentRole,
+} from "../lib/signup-intent";
 
-type SellerProps = {
-  user?: { name?: string };
-  userName?: string;
+type MyListing = {
+  id: string;
+  title: string;
+  address: string;
+  price: number;
+  confidenceScore: number | null;
+  createdAt: string;
+  photos: { url: string }[];
 };
 
-function SellerPage({ userName }: SellerProps) {
+type SellerProps = {
+  userName?: string | null;
+  myListings: MyListing[];
+};
+
+type SuccessState = {
+  listingId: string;
+  confidenceScore: number;
+  qrDataUrl: string | null;
+};
+
+function cad(n: number) {
+  return n.toLocaleString("en-CA", { maximumFractionDigits: 0 });
+}
+
+function confidenceBadge(score: number | null) {
+  if (score == null) return { label: "AI Pending", cls: "sd-badge na" };
+  if (score >= 85) return { label: `${score}/100 ✓`, cls: "sd-badge high" };
+  if (score >= 60) return { label: `${score}/100`, cls: "sd-badge medium" };
+  return { label: `${score}/100 ⚠`, cls: "sd-badge low" };
+}
+
+export default function SellerPage({
+  userName,
+  myListings: initialListings,
+}: SellerProps) {
+  const [activeTab, setActiveTab] = useState<"create" | "listings">("create");
+  const [listings, setListings] = useState<MyListing[]>(initialListings);
+
+  // Form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
   const [price, setPrice] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<SuccessState | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
     setIsSuccess(false);
 
-    const selectedFiles = fileInputRef.current?.files;
-    if (!selectedFiles || selectedFiles.length === 0) {
-      setMessage("Please add at least one photo.");
+    const files = fileInputRef.current?.files;
+    if (!files || files.length === 0) {
+      setError("Please add at least one photo.");
+      setSubmitting(false);
       return;
     }
 
@@ -39,27 +80,42 @@ function SellerPage({ userName }: SellerProps) {
     formData.append("description", description);
     formData.append("address", address);
     formData.append("price", String(Number(price)));
-    Array.from(selectedFiles).forEach((file) => {
-      formData.append("photos", file);
-    });
+    Array.from(files).forEach((f) => formData.append("photos", f));
 
-    const response = await fetch("/api/listing/create", {
+    const res = await fetch("/api/listing/create", {
       method: "POST",
-      body: formData
+      body: formData,
     });
 
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => null)) as { error?: string } | null;
       setMessage(payload?.error ?? "Could not create listing.");
       setSubmitting(false);
       return;
     }
 
-    const payload = (await response.json()) as {
+    const payload = (await res.json()) as {
       listingId: string;
       initialConfidenceScore: number;
     };
 
+    // Generate QR code
+    let qrDataUrl: string | null = null;
+    try {
+      const qrRes = await fetch("/api/qr/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: payload.listingId }),
+      });
+      if (qrRes.ok) {
+        const qrData = (await qrRes.json()) as { qrDataUrl: string };
+        qrDataUrl = qrData.qrDataUrl;
+      }
+    } catch {
+      // QR generation is non-critical
+    }
+
+    // Reset form
     setTitle("");
     setDescription("");
     setAddress("");
@@ -71,6 +127,8 @@ function SellerPage({ userName }: SellerProps) {
       `Listing created! Confidence score: ${payload.initialConfidenceScore}/100. Your listing is now live.`
     );
   }
+
+  const badge = success ? confidenceBadge(success.confidenceScore) : null;
 
   return (
     <>
@@ -175,8 +233,6 @@ function SellerPage({ userName }: SellerProps) {
   );
 }
 
-export default SellerPage;
-
 export const getServerSideProps = auth0.withPageAuthRequired({
   async getServerSideProps({ req, res }) {
     const session = await auth0.getSession(req);
@@ -188,14 +244,33 @@ export const getServerSideProps = auth0.withPageAuthRequired({
     const signupRole = getSignupIntentRole(req);
     const dbUser = await ensureDbUser(session.user, signupRole);
     clearSignupIntentCookie(res);
+
     if (dbUser.role !== "SELLER_VERIFIED") {
-      return { redirect: { destination: "/", permanent: false } };
+      const dest = dbUser.role === "SELLER_PENDING" ? "/seller/verify" : "/";
+      return { redirect: { destination: dest, permanent: false } };
     }
+
+    const rawListings = await prisma.listing.findMany({
+      where: { sellerId: dbUser.id },
+      include: { photos: { orderBy: { order: "asc" }, take: 1 } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const myListings: MyListing[] = rawListings.map((l) => ({
+      id: l.id,
+      title: l.title,
+      address: l.address,
+      price: l.price,
+      confidenceScore: l.confidenceScore,
+      createdAt: l.createdAt.toISOString(),
+      photos: l.photos.map((p) => ({ url: p.url })),
+    }));
 
     return {
       props: {
-        userName: session.user.name
-      }
+        userName: session.user.name ?? null,
+        myListings,
+      },
     };
-  }
+  },
 });
