@@ -46,6 +46,7 @@ io.on("connection", async (socket) => {
       socket.disconnect(true);
       return;
     }
+    socketToUser.set(socket.id, { userId, name: user.name });
   } catch (err) {
     console.error("[WS] DB check error:", err);
     socket.emit("error", { code: "SERVER_ERROR", message: "Verification failed" });
@@ -53,7 +54,6 @@ io.on("connection", async (socket) => {
     return;
   }
 
-  socketToUser.set(socket.id, { userId });
   socket.join(`user:${userId}`);
   console.log(`[WS] User ${userId} connected (${socket.id})`);
 
