@@ -7,7 +7,7 @@ type SessionUser = {
   name?: string;
 };
 
-export async function ensureDbUser(user: SessionUser) {
+export async function ensureDbUser(user: SessionUser, initialRole?: Role) {
   if (!user.sub || !user.email) {
     throw new Error("Authenticated user is missing required claims");
   }
@@ -18,7 +18,7 @@ export async function ensureDbUser(user: SessionUser) {
       auth0Id: user.sub,
       email: user.email,
       name: user.name,
-      role: Role.BUYER
+      role: initialRole ?? Role.BUYER
     },
     update: {
       email: user.email,

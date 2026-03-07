@@ -4,6 +4,7 @@ import { withApiAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../lib/prisma";
 import { ensureDbUser } from "../../../lib/session-user";
+import { getSignupIntentRole } from "../../../lib/signup-intent";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
@@ -35,9 +36,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return;
       }
 
-      const dbUser = await ensureDbUser(session.user);
-      if (dbUser.role !== Role.SELLER) {
-        protectedRes.status(403).json({ error: "Only sellers can create listings" });
+      const signupRole = getSignupIntentRole(protectedReq);
+      const dbUser = await ensureDbUser(session.user, signupRole);
+      if (dbUser.role !== Role.SELLER_VERIFIED) {
+        protectedRes.status(403).json({ error: "Only seller_verified users can create listings" });
         return;
       }
 

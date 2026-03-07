@@ -4,6 +4,7 @@ import "../lib/auth0-env";
 import { getSession } from "@auth0/nextjs-auth0";
 import { prisma } from "../lib/prisma";
 import { ensureDbUser } from "../lib/session-user";
+import { clearSignupIntentCookie, getSignupIntentRole } from "../lib/signup-intent";
 
 type ListingView = {
   id: string;
@@ -25,45 +26,51 @@ type HomeProps = {
     name?: string;
     email?: string;
   } | null;
-  role: "BUYER" | "SELLER" | null;
+  role: "BUYER" | "SELLER_PENDING" | "SELLER_VERIFIED" | "ADMIN" | null;
 };
 
 export default function Home({ listings, user, role }: HomeProps) {
-  const [currentRole, setCurrentRole] = useState(role);
-  const sellerMode = currentRole === "SELLER";
+  const [currentRole] = useState(role);
+  const sellerMode = currentRole === "SELLER_VERIFIED";
+  const roleLabel =
+    currentRole === "SELLER_VERIFIED"
+      ? "seller_verified"
+      : currentRole === "SELLER_PENDING"
+        ? "seller_pending"
+        : currentRole === "ADMIN"
+          ? "admin"
+          : "buyer";
 
   const avgPrice = useMemo(() => {
     if (listings.length === 0) return 0;
     return Math.round(listings.reduce((sum, house) => sum + house.price, 0) / listings.length);
   }, [listings]);
 
-  async function becomeSeller() {
-    const response = await fetch("/api/profile/role", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "SELLER" })
-    });
-
-    if (response.ok) {
-      setCurrentRole("SELLER");
-      return;
-    }
-
-    alert("Could not switch your role to seller.");
-  }
-
   return (
     <main className="container">
       <header className="hero">
         <h1>House Marketplace</h1>
-        <p>Sellers can publish houses. Registered users can browse the available listings.</p>
+        <p>Choose your signup path: buyer accounts browse and message, seller accounts submit for verification before listing.</p>
         <div className="actions">
           {!user && <a href="/api/auth/login">Log in</a>}
-          {!user && <a href="/api/auth/login?screen_hint=signup">Sign up</a>}
+          {!user && <a href="/api/auth/signup-buyer">Sign up as buyer</a>}
+          {!user && <a href="/api/auth/signup-seller">Sign up as seller</a>}
           {user && <a href="/api/auth/logout">Log out</a>}
           {sellerMode && <a href="/seller">Open seller dashboard</a>}
         </div>
       </header>
+      {!user && (
+        <section className="stats">
+          <div className="card">
+            <h3>Buyer signup</h3>
+            <p>Immediate browsing and seller messaging access.</p>
+          </div>
+          <div className="card">
+            <h3>Seller signup</h3>
+            <p>Account starts as pending; listing creation unlocks after verification.</p>
+          </div>
+        </section>
+      )}
 
       {user && (
         <section className="card">
@@ -71,11 +78,9 @@ export default function Home({ listings, user, role }: HomeProps) {
           <p>
             Signed in as <strong>{user.name || user.email}</strong>
           </p>
-          <p>Role: {currentRole || "BUYER"}</p>
-          {!sellerMode && (
-            <button type="button" onClick={becomeSeller}>
-              Become a seller
-            </button>
+          <p>Role: {roleLabel}</p>
+          {currentRole === "SELLER_PENDING" && (
+            <p>Your seller account is pending verification. Listing creation is disabled until approved.</p>
           )}
         </section>
       )}
@@ -118,7 +123,9 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({ req, r
   let role: HomeProps["role"] = null;
 
   if (session?.user) {
-    const dbUser = await ensureDbUser(session.user);
+    const signupRole = getSignupIntentRole(req);
+    const dbUser = await ensureDbUser(session.user, signupRole);
+    clearSignupIntentCookie(res);
     user = {
       name: session.user.name,
       email: session.user.email

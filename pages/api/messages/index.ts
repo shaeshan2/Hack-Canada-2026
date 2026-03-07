@@ -1,7 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import "../../../lib/auth0-env";
 import { withApiAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import { prisma } from "../../../lib/prisma";
 import { ensureDbUser } from "../../../lib/session-user";
+import { getSignupIntentRole } from "../../../lib/signup-intent";
 
 /**
  * GET /api/messages?listingId=...&otherUserId=...
@@ -24,7 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    const dbUser = await ensureDbUser(session.user);
+    const signupRole = getSignupIntentRole(protectedReq);
+    const dbUser = await ensureDbUser(session.user, signupRole);
     const listingId = protectedReq.query.listingId as string;
     const otherUserId = protectedReq.query.otherUserId as string | undefined;
 

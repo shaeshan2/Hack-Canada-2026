@@ -4,6 +4,7 @@ import { withApiAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { ensureDbUser } from "../../../lib/session-user";
 import { prisma } from "../../../lib/prisma";
+import { getSignupIntentRole } from "../../../lib/signup-intent";
 
 export default withApiAuthRequired(async function setRole(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -23,8 +24,13 @@ export default withApiAuthRequired(async function setRole(req: NextApiRequest, r
     res.status(400).json({ error: "Invalid role" });
     return;
   }
+  if (role === Role.SELLER_VERIFIED || role === Role.ADMIN) {
+    res.status(403).json({ error: "This role can only be set by admin workflows" });
+    return;
+  }
 
-  const user = await ensureDbUser(session.user);
+  const signupRole = getSignupIntentRole(req);
+  const user = await ensureDbUser(session.user, signupRole);
   const updated = await prisma.user.update({
     where: { id: user.id },
     data: { role }

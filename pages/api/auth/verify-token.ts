@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import "../../../lib/auth0-env";
 import { getSession } from "@auth0/nextjs-auth0";
-import { prisma } from "../../../lib/prisma";
 import { ensureDbUser } from "../../../lib/session-user";
+import { getSignupIntentRole } from "../../../lib/signup-intent";
 
 /**
  * POST /api/auth/verify-token
@@ -22,7 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    const dbUser = await ensureDbUser(session.user);
+    const signupRole = getSignupIntentRole(req);
+    const dbUser = await ensureDbUser(session.user, signupRole);
     res.status(200).json({
       authenticated: true,
       userId: dbUser.id,

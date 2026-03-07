@@ -8,7 +8,15 @@ datasource db {
 
 enum Role {
   BUYER
-  SELLER
+  SELLER_PENDING
+  SELLER_VERIFIED
+  ADMIN
+}
+
+enum BlockedReason {
+  FRAUD
+  DUPLICATE
+  FAKE_DOCS
 }
 
 model User {
@@ -17,6 +25,7 @@ model User {
   email     String    @unique
   name      String?
   role      Role      @default(BUYER)
+  blockedReason BlockedReason?
   listings  Listing[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")

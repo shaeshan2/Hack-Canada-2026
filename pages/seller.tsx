@@ -2,8 +2,8 @@ import "../lib/auth0-env";
 import { withPageAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import { GetServerSideProps } from "next";
 import { FormEvent, useState } from "react";
-import { Role } from "@prisma/client";
 import { ensureDbUser } from "../lib/session-user";
+import { clearSignupIntentCookie, getSignupIntentRole } from "../lib/signup-intent";
 
 type SellerProps = {
   user?: { name?: string };
@@ -113,8 +113,10 @@ export const getServerSideProps: GetServerSideProps<SellerProps> = withPageAuthR
       return { redirect: { destination: "/api/auth/login", permanent: false } };
     }
 
-    const dbUser = await ensureDbUser(session.user);
-    if (dbUser.role !== Role.SELLER) {
+    const signupRole = getSignupIntentRole(req);
+    const dbUser = await ensureDbUser(session.user, signupRole);
+    clearSignupIntentCookie(res);
+    if (dbUser.role !== "SELLER_VERIFIED") {
       return { redirect: { destination: "/", permanent: false } };
     }
 

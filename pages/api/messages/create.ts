@@ -1,7 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import "../../../lib/auth0-env";
 import { withApiAuthRequired, getSession } from "@auth0/nextjs-auth0";
+import { Role } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { ensureDbUser } from "../../../lib/session-user";
+import { getSignupIntentRole } from "../../../lib/signup-intent";
 
 /**
  * POST /api/messages
@@ -25,7 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    const dbUser = await ensureDbUser(session.user);
+    const signupRole = getSignupIntentRole(protectedReq);
+    const dbUser = await ensureDbUser(session.user, signupRole);
     const body = protectedReq.body ?? {};
     const recipientId = body.recipientId as string;
     const listingId = body.listingId as string;
@@ -36,12 +40,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
+    if (dbUser.role !== Role.BUYER && dbUser.role !== Role.ADMIN) {
+      protectedRes.status(403).json({ error: "Only buyer/admin users can message sellers" });
+      return;
+    }
+
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },
       select: { sellerId: true }
     });
     if (!listing) {
       protectedRes.status(404).json({ error: "Listing not found" });
+      return;
+    }
+
+    if (recipientId !== listing.sellerId) {
+      protectedRes.status(400).json({ error: "Messages must target the listing seller" });
       return;
     }
 
