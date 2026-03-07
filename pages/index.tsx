@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import ListingCard from "../components/ListingCard";
+import FooterCta from "../components/FooterCta";
 import type { HomePageProps, ListingCardData } from "../types";
 import "../lib/auth0-env";
 import { auth0 } from "../lib/auth0";
@@ -580,23 +581,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
         </section>
 
         {/* ── Footer CTA ─────────────────────────── */}
-        <section className="footer-cta">
-          <div className="section-inner animate-in">
-            <h2>Ready to Skip the Middleman?</h2>
-            <p>
-              Join thousands of Canadians who are buying and selling homes
-              commission-free.
-            </p>
-            <div className="footer-cta-buttons">
-              <a href="/api/auth/signup-buyer" className="btn btn-primary">
-                Sign Up as Buyer →
-              </a>
-              <a href="/api/auth/signup-seller" className="btn btn-outline">
-                Sign Up as Seller →
-              </a>
-            </div>
-          </div>
-        </section>
+        {!user && <FooterCta />}
 
         {/* ── Footer ──────────────────────────────── */}
         <footer className="footer">
