@@ -2,6 +2,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
+import ListingCard, { type ListingCardData } from "../components/ListingCard";
 
 type ParsedSearch = {
   rawQuery: string;
@@ -14,23 +15,16 @@ type ParsedSearch = {
   bedrooms: number | null;
 };
 
-type ListingCard = {
+type BrowseListing = ListingCardData & {
   id: string;
-  title: string;
-  description: string;
-  address: string;
-  price: number;
   bedrooms: number | null;
   sqft: number | null;
   latitude: number | null;
   longitude: number | null;
-  imageUrl: string | null;
-  confidenceScore: number | null;
   distanceKm: number;
-  seller: { id: string; name: string | null; email: string };
 };
 
-type ListingApiRecord = Omit<ListingCard, "distanceKm"> & {
+type ListingApiRecord = Omit<BrowseListing, "distanceKm"> & {
   photos?: Array<{ id: string; url: string; order: number }>;
 };
 
@@ -52,19 +46,12 @@ type LeafletLike = {
   };
 };
 
-function confidenceLabel(score: number | null) {
-  if (score == null) return { text: "Pending", cls: "pending" };
-  if (score >= 85) return { text: `${score}/100`, cls: "high" };
-  if (score >= 60) return { text: `${score}/100`, cls: "medium" };
-  return { text: `${score}/100`, cls: "low" };
-}
-
 export default function BrowsePage() {
   const router = useRouter();
   const initialQ = typeof router.query.q === "string" ? router.query.q : "";
   const [query, setQuery] = useState(initialQ);
   const [parsed, setParsed] = useState<ParsedSearch | null>(null);
-  const [results, setResults] = useState<ListingCard[]>([]);
+  const [results, setResults] = useState<BrowseListing[]>([]);
   const [loading, setLoading] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [manualPriceMin, setManualPriceMin] = useState<string>("");
@@ -130,7 +117,7 @@ export default function BrowsePage() {
         const payload = (await nearbyRes.json().catch(() => null)) as { error?: string } | null;
         throw new Error(payload?.error ?? "Could not load listings");
       }
-      const listings = (await nearbyRes.json()) as ListingCard[];
+      const listings = (await nearbyRes.json()) as BrowseListing[];
       setResults(listings);
     } catch (e) {
       setResults([]);
@@ -183,7 +170,7 @@ export default function BrowsePage() {
   const mapPoints = useMemo(
     () =>
       results.filter(
-        (listing): listing is ListingCard & { latitude: number; longitude: number } =>
+        (listing): listing is BrowseListing & { latitude: number; longitude: number } =>
           listing.latitude != null && listing.longitude != null
       ),
     [results]
@@ -476,33 +463,14 @@ export default function BrowsePage() {
                 </div>
               ) : (
                 <div className="buyer-card-grid">
-                  {results.map((listing) => {
-                    const conf = confidenceLabel(listing.confidenceScore);
+                  {results.map((listing, i) => {
                     return (
-                      <article key={listing.id} className="buyer-card">
-                        <img
-                          src={listing.imageUrl || "/images/hero-bg.png"}
-                          alt={listing.title}
-                        />
-                        <div className="buyer-card-body">
-                          <h3>{listing.title}</h3>
-                          <p className="buyer-price">${listing.price.toLocaleString("en-CA")} CAD</p>
-                          <p>{listing.address}</p>
-                          <p>
-                            {listing.bedrooms ?? "?"} beds · {listing.sqft ?? "?"} sqft ·{" "}
-                            {parsed ? `${listing.distanceKm.toFixed(1)} km` : "Across Canada"}
-                          </p>
-                          <p className={`buyer-confidence ${conf.cls}`}>Confidence: {conf.text}</p>
-                          <div className="buyer-card-actions">
-                            <Link href={`/listings/${listing.id}`}>View Details</Link>
-                            <Link
-                              href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}
-                            >
-                              Chat
-                            </Link>
-                          </div>
-                        </div>
-                      </article>
+                      <ListingCard
+                        key={listing.id}
+                        listing={listing}
+                        index={i}
+                        showMessageSeller
+                      />
                     );
                   })}
                   {!loading && hasLoaded && results.length === 0 && !error && (
