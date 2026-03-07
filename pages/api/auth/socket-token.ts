@@ -4,7 +4,10 @@ import { auth0 } from "../../../lib/auth0";
 import { ensureDbUser } from "../../../lib/session-user";
 import { getSignupIntentRole } from "../../../lib/signup-intent";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     res.status(405).json({ error: "Method not allowed" });
@@ -20,11 +23,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const signupRole = getSignupIntentRole(req);
   const dbUser = await ensureDbUser(session.user, signupRole);
 
-  const token =
-    (session as unknown as { idToken?: string; accessToken?: string }).idToken ??
-    (session as unknown as { idToken?: string; accessToken?: string }).accessToken;
+  const token = session.tokenSet?.idToken ?? session.tokenSet?.accessToken;
   if (!token) {
-    res.status(401).json({ error: "No Auth0 JWT in session", authenticated: false });
+    res
+      .status(401)
+      .json({ error: "No Auth0 JWT in session", authenticated: false });
     return;
   }
 
@@ -32,6 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     authenticated: true,
     token,
     userId: dbUser.id,
-    role: dbUser.role
+    role: dbUser.role,
   });
 }

@@ -14,10 +14,13 @@ import dynamic from "next/dynamic";
 import type { NeighborhoodData } from "../api/listings/[id]/neighborhood";
 
 // Leaflet uses window, so must be dynamically imported
-const NeighborhoodMap = dynamic(() => import("../../components/NeighborhoodMap"), {
-  ssr: false,
-  loading: () => <div className="ld-map-loading">Loading Map...</div>,
-});
+const NeighborhoodMap = dynamic(
+  () => import("../../components/NeighborhoodMap"),
+  {
+    ssr: false,
+    loading: () => <div className="ld-map-loading">Loading Map...</div>,
+  },
+);
 
 type ListingDetailProps = {
   listing: {
@@ -43,17 +46,45 @@ function cad(n: number) {
 }
 
 function confidenceInfo(score: number | null) {
-  if (score == null) return { label: "AI Pending", cls: "ld-badge-na", icon: "⏳", tip: "Fraud check running" };
-  if (score >= 85) return { label: `${score}/100 Verified`, cls: "ld-badge-high", icon: "🛡️", tip: "High confidence — no fraud signals" };
-  if (score >= 60) return { label: `${score}/100 Review`, cls: "ld-badge-mid", icon: "⚠️", tip: "Moderate confidence" };
-  return { label: `${score}/100 Low`, cls: "ld-badge-low", icon: "🚨", tip: "Low confidence — exercise caution" };
+  if (score == null)
+    return {
+      label: "AI Pending",
+      cls: "ld-badge-na",
+      icon: "⏳",
+      tip: "Fraud check running",
+    };
+  if (score >= 85)
+    return {
+      label: `${score}/100 Verified`,
+      cls: "ld-badge-high",
+      icon: "🛡️",
+      tip: "High confidence — no fraud signals",
+    };
+  if (score >= 60)
+    return {
+      label: `${score}/100 Review`,
+      cls: "ld-badge-mid",
+      icon: "⚠️",
+      tip: "Moderate confidence",
+    };
+  return {
+    label: `${score}/100 Low`,
+    cls: "ld-badge-low",
+    icon: "🚨",
+    tip: "Low confidence — exercise caution",
+  };
 }
 
 type PriceEstimateResult = { price_range: string; explanation: string } | null;
 
-export default function ListingDetailPage({ listing, user }: ListingDetailProps) {
+export default function ListingDetailPage({
+  listing,
+  user,
+}: ListingDetailProps) {
   const [activeIdx, setActiveIdx] = useState(0);
-  const [neighborhood, setNeighborhood] = useState<NeighborhoodData | null>(null);
+  const [neighborhood, setNeighborhood] = useState<NeighborhoodData | null>(
+    null,
+  );
   const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [estimateError, setEstimateError] = useState<string | null>(null);
@@ -109,7 +140,9 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
     return (
       <div className="ld-notfound">
         <h2>Listing not found</h2>
-        <Link href="/browse" className="btn btn-primary">Browse all listings</Link>
+        <Link href="/browse" className="btn btn-primary">
+          Browse all listings
+        </Link>
       </div>
     );
   }
@@ -127,8 +160,11 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
   return (
     <>
       <Head>
-        <title>{listing.title} | DeedScan</title>
-        <meta name="description" content={`${listing.address} — $${cad(listing.price)} CAD. Commission-free on DeedScan.`} />
+        <title>{`${listing.title} | DeedScan`}</title>
+        <meta
+          name="description"
+          content={`${listing.address} — $${cad(listing.price)} CAD. Commission-free on DeedScan.`}
+        />
       </Head>
 
       {/* ── Navbar ── */}
@@ -137,11 +173,17 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
           <span className="logo-icon">🏠</span>DeedScan
         </Link>
         <div className="ld-nav-right">
-          <Link href="/browse" className="ld-nav-link">← All Listings</Link>
+          <Link href="/browse" className="ld-nav-link">
+            ← All Listings
+          </Link>
           {user ? (
-            <Link href="/messages" className="ld-nav-link">💬 Messages</Link>
+            <Link href="/messages" className="ld-nav-link">
+              💬 Messages
+            </Link>
           ) : (
-            <a href="/api/auth/login" className="ld-nav-btn">Log In</a>
+            <a href="/api/auth/login" className="ld-nav-btn">
+              Log In
+            </a>
           )}
         </div>
       </nav>
@@ -165,15 +207,25 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
                 <>
                   <button
                     className="ld-gallery-arrow ld-gallery-prev"
-                    onClick={() => setActiveIdx((i) => (i - 1 + photos.length) % photos.length)}
+                    onClick={() =>
+                      setActiveIdx(
+                        (i) => (i - 1 + photos.length) % photos.length,
+                      )
+                    }
                     aria-label="Previous photo"
-                  >‹</button>
+                  >
+                    ‹
+                  </button>
                   <button
                     className="ld-gallery-arrow ld-gallery-next"
                     onClick={() => setActiveIdx((i) => (i + 1) % photos.length)}
                     aria-label="Next photo"
-                  >›</button>
-                  <div className="ld-gallery-counter">{activeIdx + 1} / {photos.length}</div>
+                  >
+                    ›
+                  </button>
+                  <div className="ld-gallery-counter">
+                    {activeIdx + 1} / {photos.length}
+                  </div>
                 </>
               )}
             </div>
@@ -218,7 +270,9 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
                 {listing.sqft != null && (
                   <div className="ld-spec">
                     <span className="ld-spec-icon">📐</span>
-                    <span className="ld-spec-value">{listing.sqft.toLocaleString()}</span>
+                    <span className="ld-spec-value">
+                      {listing.sqft.toLocaleString()}
+                    </span>
                     <span className="ld-spec-label">sq ft</span>
                   </div>
                 )}
@@ -270,12 +324,16 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
                 {isLoadingNeighborhood ? (
                   <div className="ld-neighborhood-loading">
                     <span className="ld-spinner">✨</span>
-                    <p>AI is analyzing the neighborhood, fetching transit and schools...</p>
+                    <p>
+                      AI is analyzing the neighborhood, fetching transit and
+                      schools...
+                    </p>
                   </div>
                 ) : neighborhood ? (
                   <>
                     <p className="ld-ai-summary">
-                      <span className="ld-ai-sparkle">✨</span> {neighborhood.aiSummary}
+                      <span className="ld-ai-sparkle">✨</span>{" "}
+                      {neighborhood.aiSummary}
                     </p>
                     <div className="ld-neighborhood-grid">
                       <div className="ld-neighborhood-scores">
@@ -285,7 +343,12 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
                             <span>{neighborhood.scores.transit}/100</span>
                           </div>
                           <div className="ld-score-bar">
-                            <div className="ld-score-fill transit" style={{ width: `${neighborhood.scores.transit}%` }} />
+                            <div
+                              className="ld-score-fill transit"
+                              style={{
+                                width: `${neighborhood.scores.transit}%`,
+                              }}
+                            />
                           </div>
                         </div>
                         <div className="ld-score-item">
@@ -294,7 +357,12 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
                             <span>{neighborhood.scores.schools}/100</span>
                           </div>
                           <div className="ld-score-bar">
-                            <div className="ld-score-fill schools" style={{ width: `${neighborhood.scores.schools}%` }} />
+                            <div
+                              className="ld-score-fill schools"
+                              style={{
+                                width: `${neighborhood.scores.schools}%`,
+                              }}
+                            />
                           </div>
                         </div>
                         <div className="ld-score-item">
@@ -303,7 +371,12 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
                             <span>{neighborhood.scores.walkability}/100</span>
                           </div>
                           <div className="ld-score-bar">
-                            <div className="ld-score-fill walk" style={{ width: `${neighborhood.scores.walkability}%` }} />
+                            <div
+                              className="ld-score-fill walk"
+                              style={{
+                                width: `${neighborhood.scores.walkability}%`,
+                              }}
+                            />
                           </div>
                         </div>
                       </div>
@@ -326,8 +399,13 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
           {/* ── Right (sticky card) ── */}
           <div className="ld-right">
             <div className="ld-price-card">
-              <div className="ld-price">${cad(listing.price)}<span className="ld-price-cad"> CAD</span></div>
-              <div className="ld-savings-pill">Saves ~${cad(savings)} vs. agent</div>
+              <div className="ld-price">
+                ${cad(listing.price)}
+                <span className="ld-price-cad"> CAD</span>
+              </div>
+              <div className="ld-savings-pill">
+                Saves ~${cad(savings)} vs. agent
+              </div>
 
               <div className="ld-estimate-block">
                 <button
@@ -337,15 +415,23 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
                   disabled={estimateLoading}
                   aria-busy={estimateLoading}
                 >
-                  {estimateLoading ? "Getting estimate…" : "Get suggested price"}
+                  {estimateLoading
+                    ? "Getting estimate…"
+                    : "Get suggested price"}
                 </button>
                 {estimateError && (
-                  <p className="ld-estimate-error" role="alert">{estimateError}</p>
+                  <p className="ld-estimate-error" role="alert">
+                    {estimateError}
+                  </p>
                 )}
                 {estimate && !estimateLoading && (
                   <div className="ld-estimate-result">
-                    <div className="ld-estimate-range">{estimate.price_range}</div>
-                    <p className="ld-estimate-explanation">{estimate.explanation}</p>
+                    <div className="ld-estimate-range">
+                      {estimate.price_range}
+                    </div>
+                    <p className="ld-estimate-explanation">
+                      {estimate.explanation}
+                    </p>
                   </div>
                 )}
               </div>
@@ -364,7 +450,9 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
                 </>
               ) : (
                 <>
-                  <p className="ld-login-prompt">Log in to contact this seller directly</p>
+                  <p className="ld-login-prompt">
+                    Log in to contact this seller directly
+                  </p>
                   <a href="/api/auth/login" className="ld-cta-primary">
                     Log In to Message
                   </a>
@@ -377,7 +465,9 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
               <div className="ld-seller-row">
                 <div className="ld-seller-avatar">{sellerInitial}</div>
                 <div>
-                  <div className="ld-seller-name">{listing.seller.name ?? "Verified Seller"}</div>
+                  <div className="ld-seller-name">
+                    {listing.seller.name ?? "Verified Seller"}
+                  </div>
                   <div className="ld-seller-tag">FSBO · No Commission</div>
                 </div>
               </div>
@@ -385,7 +475,9 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
               <div className={`ld-conf-row ${conf.cls}`}>
                 <span>{conf.icon}</span>
                 <div>
-                  <strong>AI Score: {listing.confidenceScore ?? "—"}/100</strong>
+                  <strong>
+                    AI Score: {listing.confidenceScore ?? "—"}/100
+                  </strong>
                   <p>{conf.tip}</p>
                 </div>
               </div>

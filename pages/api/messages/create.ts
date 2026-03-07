@@ -6,9 +6,16 @@ import { prisma } from "../../../lib/prisma";
 import { ensureDbUser } from "../../../lib/session-user";
 import { getSignupIntentRole } from "../../../lib/signup-intent";
 import { createMessageSchema, parseBody } from "../../../lib/api/validation";
-import { sendError, sendNotFound, sendValidation } from "../../../lib/api/errors";
+import {
+  sendError,
+  sendNotFound,
+  sendValidation,
+} from "../../../lib/api/errors";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     sendError(res, "Method not allowed", "BAD_REQUEST", 405);
@@ -17,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return auth0.withApiAuthRequired(async function createMessage(
     protectedReq: NextApiRequest,
-    protectedRes: NextApiResponse
+    protectedRes: NextApiResponse,
   ) {
     const session = await auth0.getSession(protectedReq);
     if (!session?.user) {
@@ -35,11 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const { recipientId, listingId, content } = parsed.data;
 
-    if (dbUser.role !== Role.BUYER && dbUser.role !== Role.ADMIN) {
-      sendError(protectedRes, "Only buyers or admins can message sellers", "FORBIDDEN", 403);
-      return;
-    }
-
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },
       select: { sellerId: true },
@@ -49,8 +51,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    if (recipientId !== listing.sellerId) {
-      sendError(protectedRes, "Messages must target the listing seller", "BAD_REQUEST", 400);
+    if (dbUser.role === Role.BUYER) {
+      // Buyers can only message the listing's seller
+      if (recipientId !== listing.sellerId) {
+        sendError(
+          protectedRes,
+          "Messages must target the listing seller",
+          "BAD_REQUEST",
+          400,
+        );
+        return;
+      }
+    } else if (dbUser.role === Role.SELLER) {
+      // Sellers can only reply on their own listings
+      if (listing.sellerId !== dbUser.id) {
+        sendError(
+          protectedRes,
+          "You can only message about your own listings",
+          "FORBIDDEN",
+          403,
+        );
+        return;
+      }
+    } else if (dbUser.role !== Role.ADMIN) {
+      sendError(protectedRes, "Unauthorized", "FORBIDDEN", 403);
       return;
     }
 

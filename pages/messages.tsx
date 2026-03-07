@@ -167,7 +167,7 @@ export default function MessagesPage({ user }: MessagesPageProps) {
       setSending(false);
     } else {
       setSending(true);
-      fetch("/api/messages", {
+      fetch("/api/messages/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
