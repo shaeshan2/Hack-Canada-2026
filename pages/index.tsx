@@ -297,10 +297,10 @@ export default function Home({ listings, user, role }: HomeProps) {
                 <input
                   value={buyerQuery}
                   onChange={(event) => setBuyerQuery(event.target.value)}
-                  placeholder="3-bed under $700k near schools in Mississauga"
+                  placeholder="Ask AI: 3-bed under $700k near schools in Mississauga"
                   aria-label="Search homes with natural language"
                 />
-                <button type="submit">Search Homes</button>
+                <button type="submit">✨ Search using AI</button>
               </form>
               <p className="hero-search-note">
                 Natural-language search for buyers. Or{" "}

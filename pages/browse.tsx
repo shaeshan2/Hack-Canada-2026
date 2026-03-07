@@ -359,51 +359,51 @@ export default function BrowsePage() {
           <section className="buyer-browse-layout animate-in animate-in-delay-2">
             <aside className="buyer-filters">
               <h2>Filters</h2>
-            <label>
-              Price Min
-              <input
-                type="number"
-                value={manualPriceMin}
-                onChange={(e) => setManualPriceMin(e.target.value)}
-                placeholder={parsed?.price_min?.toString() ?? "Any"}
-              />
-            </label>
-            <label>
-              Price Max
-              <input
-                type="number"
-                value={manualPriceMax}
-                onChange={(e) => setManualPriceMax(e.target.value)}
-                placeholder={parsed?.price_max?.toString() ?? "Any"}
-              />
-            </label>
-            <label>
-              Bedrooms
-              <input
-                type="number"
-                min={0}
-                value={manualBedrooms}
-                onChange={(e) => setManualBedrooms(e.target.value)}
-                placeholder={parsed?.bedrooms?.toString() ?? "Any"}
-              />
-            </label>
-            <label>
-              Radius (km)
-              <input
-                type="number"
-                min={1}
-                value={manualRadius}
-                onChange={(e) => setManualRadius(e.target.value)}
-              />
-            </label>
-            <button
-              type="button"
-              className="btn btn-outline buyer-apply-btn"
-              onClick={() => (query.trim() ? void runSearch(query.trim()) : void loadAllListings())}
-              disabled={loading}
-            >
-              Apply
-            </button>
+              <label>
+                Price Min
+                <input
+                  type="number"
+                  value={manualPriceMin}
+                  onChange={(e) => setManualPriceMin(e.target.value)}
+                  placeholder={parsed?.price_min?.toString() ?? "Any"}
+                />
+              </label>
+              <label>
+                Price Max
+                <input
+                  type="number"
+                  value={manualPriceMax}
+                  onChange={(e) => setManualPriceMax(e.target.value)}
+                  placeholder={parsed?.price_max?.toString() ?? "Any"}
+                />
+              </label>
+              <label>
+                Bedrooms
+                <input
+                  type="number"
+                  min={0}
+                  value={manualBedrooms}
+                  onChange={(e) => setManualBedrooms(e.target.value)}
+                  placeholder={parsed?.bedrooms?.toString() ?? "Any"}
+                />
+              </label>
+              <label>
+                Radius (km)
+                <input
+                  type="number"
+                  min={1}
+                  value={manualRadius}
+                  onChange={(e) => setManualRadius(e.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                className="btn btn-outline buyer-apply-btn"
+                onClick={() => (query.trim() ? void runSearch(query.trim()) : void loadAllListings())}
+                disabled={loading}
+              >
+                Apply
+              </button>
             </aside>
 
             <section className="buyer-results">
@@ -421,7 +421,13 @@ export default function BrowsePage() {
 
               {error && <p className="buyer-error">{error}</p>}
 
-              {showMap ? (
+              {loading ? (
+                <div className="buyer-ai-loading">
+                  <span className="buyer-ai-spinner">✨</span>
+                  <h3>AI is analyzing your search...</h3>
+                  <p>Scanning the market for the best matches across Canada.</p>
+                </div>
+              ) : showMap ? (
                 <div className="buyer-map-wrap">
                   {mapPoints.length > 0 || (parsed?.lat != null && parsed?.lng != null) ? (
                     <div ref={mapContainerRef} className="buyer-map-canvas" aria-label="Listings map" />

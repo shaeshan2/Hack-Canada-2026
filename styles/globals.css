@@ -4070,6 +4070,59 @@ img {
 }
 
 /* ────────────────────────────────────────────────────
+   AI LOADING STATE (Browse Page)
+   ──────────────────────────────────────────────────── */
+
+.buyer-ai-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--border-glass);
+  border-radius: var(--radius-xl);
+  margin-top: 20px;
+  animation: shimmerBg 2s infinite ease-in-out;
+}
+
+@keyframes shimmerBg {
+  0%, 100% {
+    background: rgba(255, 255, 255, 0.01);
+  }
+  50% {
+    background: rgba(16, 185, 129, 0.04);
+  }
+}
+
+.buyer-ai-spinner {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  animation: floatBounce 2s infinite ease-in-out;
+}
+
+@keyframes floatBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.1); }
+}
+
+.buyer-ai-loading h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.buyer-ai-loading p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* ────────────────────────────────────────────────────
    DEEDY — AI CHATBOT WIDGET
    ──────────────────────────────────────────────────── */
 

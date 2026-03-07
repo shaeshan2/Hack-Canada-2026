@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { GoogleGenAI } from "@google/genai";
 import { config } from "../../../lib/config";
 
 type ParsedQuery = {
@@ -83,17 +84,10 @@ async function parseWithGemini(rawQuery: string): Promise<Omit<ParsedQuery, "raw
   if (!apiKey) return null;
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `Parse this real estate search query into JSON.
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Parse this real estate search query into JSON.
 Query: "${rawQuery}"
 
 Return JSON only with exact shape:
@@ -110,17 +104,12 @@ Rules:
 - If query says "under $700k", set price_max=700000.
 - If missing radius, default radius_km=10.
 - Keep unknown fields null.`,
-                },
-              ],
-            },
-          ],
-          generationConfig: { responseMimeType: "application/json" },
-        }),
-      }
-    );
-    if (!response.ok) return null;
-    const payload = await response.json();
-    const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text;
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const text = response.text;
     if (!text) return null;
     const parsed = JSON.parse(text) as Record<string, unknown>;
     return {
