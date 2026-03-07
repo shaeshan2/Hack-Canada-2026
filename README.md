@@ -33,8 +33,8 @@ In Auth0, configure these app URLs:
 ## 3) Create DB
 
 ```bash
-npx prisma migrate dev --name init
-npx prisma generate
+npm run prisma:migrate -- --name init
+npm run prisma:generate
 ```
 
 ## 4) Run
