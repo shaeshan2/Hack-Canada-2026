@@ -382,7 +382,11 @@ export async function runFraudCheck(listingId: string): Promise<FraudResult> {
 
   await prisma.listing.update({
     where: { id: listingId },
-    data: { confidenceScore }
+    data: {
+      confidenceScore,
+      breakdownJson: JSON.stringify(breakdown),
+      flagsJson: JSON.stringify(flags)
+    }
   });
 
   if (confidenceScore < 60 || flags.length > 0) {

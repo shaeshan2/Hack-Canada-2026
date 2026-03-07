@@ -60,6 +60,8 @@ model Listing {
   latitude        Float?
   longitude       Float?
   confidenceScore Int?     // 0-100; null = not yet run
+  breakdownJson   String?  // JSON string of ScoreBreakdown
+  flagsJson       String?  // JSON string of string[]
   sellerId        String
   seller          User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   fraudFlag       FraudFlag?

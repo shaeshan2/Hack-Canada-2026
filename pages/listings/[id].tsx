@@ -11,6 +11,7 @@ import {
 } from "../../lib/signup-intent";
 import { prisma } from "../../lib/prisma";
 import dynamic from "next/dynamic";
+import FraudBreakdownCard from "../../components/FraudBreakdownCard";
 import type { NeighborhoodData } from "../api/listings/[id]/neighborhood";
 
 // Leaflet uses window, so must be dynamically imported
@@ -33,6 +34,8 @@ type ListingDetailProps = {
     sqft: number | null;
     bedrooms: number | null;
     confidenceScore: number | null;
+    breakdownJson: string | null;
+    flagsJson: string | null;
     latitude: number | null;
     longitude: number | null;
     seller: { id: string; name: string | null };
@@ -90,6 +93,11 @@ export default function ListingDetailPage({
   const [estimateError, setEstimateError] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<PriceEstimateResult>(null);
 
+  // Local state for fraud check so we can poll and update it live
+  const [localConfidenceScore, setLocalConfidenceScore] = useState(listing?.confidenceScore ?? null);
+  const [localBreakdownJson, setLocalBreakdownJson] = useState(listing?.breakdownJson ?? null);
+  const [localFlagsJson, setLocalFlagsJson] = useState(listing?.flagsJson ?? null);
+
   async function fetchPriceEstimate() {
     if (!listing) return;
     setEstimateLoading(true);
@@ -136,6 +144,34 @@ export default function ListingDetailPage({
       });
   }, [listing]);
 
+  // Poll for fraud check results if it's pending
+  useEffect(() => {
+    if (!listing || localConfidenceScore !== null) return;
+
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/listings/${listing.id}`);
+        if (!res.ok) return;
+        const freshData = await res.json();
+
+        if (freshData.confidenceScore !== null && isMounted) {
+          setLocalConfidenceScore(freshData.confidenceScore);
+          setLocalBreakdownJson(freshData.breakdownJson);
+          setLocalFlagsJson(freshData.flagsJson);
+          clearInterval(interval);
+        }
+      } catch (e) {
+        console.error("Error polling for fraud check", e);
+      }
+    }, 2000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [listing, localConfidenceScore]);
+
   if (!listing) {
     return (
       <div className="ld-notfound">
@@ -153,7 +189,7 @@ export default function ListingDetailPage({
       ? [{ url: listing.imageUrl, id: "fallback", order: 0 }]
       : [];
 
-  const conf = confidenceInfo(listing.confidenceScore);
+  const conf = confidenceInfo(localConfidenceScore);
   const savings = Math.round(listing.price * 0.05);
   const sellerInitial = (listing.seller.name?.[0] ?? "S").toUpperCase();
 
@@ -472,15 +508,11 @@ export default function ListingDetailPage({
                 </div>
               </div>
 
-              <div className={`ld-conf-row ${conf.cls}`}>
-                <span>{conf.icon}</span>
-                <div>
-                  <strong>
-                    AI Score: {listing.confidenceScore ?? "—"}/100
-                  </strong>
-                  <p>{conf.tip}</p>
-                </div>
-              </div>
+              <FraudBreakdownCard
+                confidenceScore={localConfidenceScore}
+                breakdownJson={localBreakdownJson}
+                flagsJson={localFlagsJson}
+              />
             </div>
           </div>
         </div>
@@ -529,7 +561,9 @@ export const getServerSideProps: GetServerSideProps<
         imageUrl: listing.imageUrl,
         sqft: listing.sqft,
         bedrooms: listing.bedrooms,
-        confidenceScore: listing.confidenceScore,
+        confidenceScore: listing.confidenceScore ?? null,
+        breakdownJson: listing.breakdownJson ?? null,
+        flagsJson: listing.flagsJson ?? null,
         latitude: listing.latitude,
         longitude: listing.longitude,
         seller: listing.seller,

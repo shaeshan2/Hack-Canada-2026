@@ -62,7 +62,7 @@ export default async function handler(
         );
         return;
       }
-    } else if (dbUser.role === Role.SELLER) {
+    } else if (dbUser.role === Role.SELLER_VERIFIED || dbUser.role === Role.SELLER_PENDING) {
       // Sellers can only reply on their own listings
       if (listing.sellerId !== dbUser.id) {
         sendError(
