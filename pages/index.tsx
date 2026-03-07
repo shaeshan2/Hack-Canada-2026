@@ -687,7 +687,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
   try {
     const raw = await prisma.listing.findMany({
       include: {
-        seller: { select: { id: true, name: true, email: true } },
+        seller: { select: { id: true, name: true, email: true, role: true } },
       },
       orderBy: { createdAt: "desc" },
     });

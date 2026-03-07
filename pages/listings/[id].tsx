@@ -38,7 +38,7 @@ type ListingDetailProps = {
     flagsJson: string | null;
     latitude: number | null;
     longitude: number | null;
-    seller: { id: string; name: string | null };
+    seller: { id: string; name: string | null; role: string };
     photos: { id: string; url: string; order: number }[];
   } | null;
   user: { name?: string; email?: string } | null;
@@ -527,6 +527,16 @@ export default function ListingDetailPage({
                 <div>
                   <div className="ld-seller-name">
                     {listing.seller.name ?? "Verified Seller"}
+                    {listing.seller.role === "SELLER_VERIFIED" && (
+                      <span
+                        className="seller-verified-check"
+                        aria-label="Verified seller"
+                        title="Verified seller"
+                      >
+                        {" "}
+                        ✓
+                      </span>
+                    )}
                   </div>
                   <div className="ld-seller-tag">FSBO · No Commission</div>
                 </div>
@@ -556,7 +566,7 @@ export const getServerSideProps: GetServerSideProps<
   const listing = await prisma.listing.findUnique({
     where: { id },
     include: {
-      seller: { select: { id: true, name: true, email: true } },
+      seller: { select: { id: true, name: true, email: true, role: true } },
       photos: { orderBy: { order: "asc" } },
     },
   });

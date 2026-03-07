@@ -13,6 +13,7 @@ export type ListingCardData = {
     id: string;
     name: string | null;
     email: string;
+    role?: string;
   };
 };
 
@@ -39,6 +40,7 @@ export default function ListingCard({
   showMessageSeller,
 }: ListingCardProps) {
   const badge = confidenceLabel(listing.confidenceScore);
+  const isSellerVerified = listing.seller.role === "SELLER_VERIFIED";
 
   return (
     <article
@@ -77,7 +79,19 @@ export default function ListingCard({
           )}
         </div>
         <div className="listing-card-footer-meta">
-          <span>Seller: {listing.seller.name || "Unknown"}</span>
+          <span>
+            Seller: {listing.seller.name || "Unknown"}
+            {isSellerVerified && (
+              <span
+                className="seller-verified-check"
+                aria-label="Verified seller"
+                title="Verified seller"
+              >
+                {" "}
+                ✓
+              </span>
+            )}
+          </span>
           <span>{new Date(listing.createdAt).toLocaleDateString("en-CA")}</span>
         </div>
       </div>

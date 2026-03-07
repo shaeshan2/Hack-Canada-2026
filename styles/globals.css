@@ -1312,6 +1312,11 @@ img {
   color: var(--text-muted);
 }
 
+.seller-verified-check {
+  color: var(--accent-light);
+  font-weight: 800;
+}
+
 .empty-listings {
   text-align: center;
   padding: 80px 24px;
