@@ -49,8 +49,16 @@ All listing and message responses use consistent shapes; errors use `{ error: st
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
+| GET    | `/api/conversations` | Yes | Returns current user's conversations: `{ listingId, listing, otherUser, lastMessage, unreadCount }[]`. |
 | GET    | `/api/messages` | Yes | Query: `listingId` (required), `otherUserId` (optional). Returns messages for the thread. |
 | POST   | `/api/messages` | Yes (BUYER or ADMIN) | Body: `{ recipientId, listingId, content }`. Creates message. |
+
+### WebSocket (chat server)
+
+- **URL:** `NEXT_PUBLIC_WS_URL` or `ws://localhost:3001` (same host, port 3001).
+- **Auth:** Connect with `auth: { userId }` where `userId` is the DB user id from `POST /api/auth/verify-token`.
+- **Events (client → server):** `send_message` `{ recipientId, listingId, content }`; `typing_start` / `typing_stop` `{ listingId, recipientId }`.
+- **Events (server → client):** `new_message` (full message object); `typing` `{ listingId, userId, name }`; `typing_stop` `{ listingId, userId }`; `error` `{ code, message }`.
 
 ### Profile
 

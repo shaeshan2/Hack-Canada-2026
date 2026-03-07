@@ -55,6 +55,7 @@ function SellerPage({ userName }: SellerProps) {
         <p>Create your listing. Prices in CAD. No commission.</p>
         <div className="actions">
           <a href="/">Back to DeedScan</a>
+          <a href="/messages">Messages</a>
           <a href="/api/auth/logout">Log out</a>
         </div>
       </header>

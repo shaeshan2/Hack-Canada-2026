@@ -1,4 +1,5 @@
 import { GetServerSideProps } from "next";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import "../lib/auth0-env";
 import { getSession } from "@auth0/nextjs-auth0";
@@ -16,6 +17,7 @@ type ListingView = {
   imageUrl: string | null;
   createdAt: string;
   seller: {
+    id: string;
     name: string | null;
     email: string;
   };
@@ -72,6 +74,7 @@ export default function Home({ listings, user, role }: HomeProps) {
                 <>
                   <p className="menu-label">{user.name || user.email}</p>
                   <p className="menu-label">Role: {roleLabel}</p>
+                  <a href="/messages">Messages</a>
                   {sellerMode && <a href="/seller">Seller dashboard</a>}
                   <a href="/seller/verify">Seller verification</a>
                   {currentRole === "ADMIN" && <a href="/admin/review">Admin review</a>}
@@ -129,11 +132,20 @@ export default function Home({ listings, user, role }: HomeProps) {
                 <span className="confidence-label">Confidence</span>
                 <span className="confidence-pill">{listing.confidenceScore ?? "N/A"}{listing.confidenceScore != null ? "/100" : ""}</span>
               </div>
-              <h3>{listing.title}</h3>
+              <h3>
+                <Link href={`/listings/${listing.id}`}>{listing.title}</Link>
+              </h3>
               <p className="price">${listing.price.toLocaleString("en-CA")} CAD</p>
               <p>{listing.address}</p>
               <p>{listing.description}</p>
               <p className="seller">Seller: {listing.seller.name || listing.seller.email}</p>
+              {user && (
+                <p>
+                  <Link href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}>
+                    Message seller
+                  </Link>
+                </p>
+              )}
             </article>
           ))}
 
@@ -164,6 +176,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({ req, r
     include: {
       seller: {
         select: {
+          id: true,
           name: true,
           email: true
         }
