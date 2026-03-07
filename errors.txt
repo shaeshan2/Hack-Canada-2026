@@ -1,5 +1,0 @@
-﻿pages/api/listings/[id]/neighborhood.ts(167,13): error TS2322: Type '{ distanceText: string; id: string; type: "transit" | "school" | "grocery"; name: string | undefined; lat: number; lng: number; }[]' is not assignable to type '{ id: string; type: "transit" | "school" | "grocery"; name: string; lat: number; lng: number; distanceText: string; }[]'.
-  Type '{ distanceText: string; id: string; type: "transit" | "school" | "grocery"; name: string | undefined; lat: number; lng: number; }' is not assignable to type '{ id: string; type: "transit" | "school" | "grocery"; name: string; lat: number; lng: number; distanceText: string; }'.
-    Types of property 'name' are incompatible.
-      Type 'string | undefined' is not assignable to type 'string'.
-        Type 'undefined' is not assignable to type 'string'.

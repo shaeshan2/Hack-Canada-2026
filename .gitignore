@@ -9,3 +9,4 @@ tsconfig.tsbuildinfo
 public/uploads
 .DS_Store
 mcp.json
+errors.txt
