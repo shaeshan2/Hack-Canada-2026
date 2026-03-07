@@ -53,6 +53,9 @@ type FlaggedListing = {
 
 type Toast = { id: number; text: string; kind: "success" | "error" };
 
+type SellerStatusFilter = VerificationStatus;
+type FlagStatusFilter = FraudFlagStatus;
+
 type Props = {
   adminName?: string;
 };
@@ -69,6 +72,11 @@ function AdminReviewPage({ adminName }: Props) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [activeTab, setActiveTab] = useState<"sellers" | "flags">("sellers");
   const [loading, setLoading] = useState(true);
+  const [sellerStatusFilter, setSellerStatusFilter] =
+    useState<SellerStatusFilter>(VerificationStatus.PENDING);
+  const [flagStatusFilter, setFlagStatusFilter] =
+    useState<FlagStatusFilter>(FraudFlagStatus.PENDING_REVIEW);
+  const [bulkSellersLoading, setBulkSellersLoading] = useState(false);
   // Hydration fix: dates are locale-sensitive; only format them after client mount
   const [mounted, setMounted] = useState(false);
 
@@ -76,17 +84,28 @@ function AdminReviewPage({ adminName }: Props) {
     setMounted(true);
   }, []);
 
+  const filteredSellers = useMemo(
+    () =>
+      pendingSellers.filter((submission) => submission.status === sellerStatusFilter),
+    [pendingSellers, sellerStatusFilter],
+  );
+
+  const filteredFlags = useMemo(
+    () => flaggedListings.filter((flag) => flag.status === flagStatusFilter),
+    [flaggedListings, flagStatusFilter],
+  );
+
   const selectedSubmission = useMemo(
     () =>
-      pendingSellers.find(
+      filteredSellers.find(
         (submission) => submission.id === selectedSubmissionId,
       ) ?? null,
-    [pendingSellers, selectedSubmissionId],
+    [filteredSellers, selectedSubmissionId],
   );
 
   const selectedFlag = useMemo(
-    () => flaggedListings.find((flag) => flag.id === selectedFlagId) ?? null,
-    [flaggedListings, selectedFlagId],
+    () => filteredFlags.find((flag) => flag.id === selectedFlagId) ?? null,
+    [filteredFlags, selectedFlagId],
   );
 
   // Safe date helpers — render nothing until mounted to avoid SSR/client mismatch
@@ -160,6 +179,57 @@ function AdminReviewPage({ adminName }: Props) {
     await loadQueue();
   }
 
+  async function bulkApprovePendingSellers() {
+    const targets = pendingSellers.filter(
+      (submission) => submission.status === VerificationStatus.PENDING,
+    );
+    if (targets.length === 0) return;
+    if (
+      !window.confirm(
+        `Approve ${targets.length} pending seller${
+          targets.length === 1 ? "" : "s"
+        }?`,
+      )
+    ) {
+      return;
+    }
+
+    setBulkSellersLoading(true);
+    let success = 0;
+    for (const submission of targets) {
+      try {
+        const res = await fetch(
+          `/api/admin/review/sellers/${submission.id}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ decision: "approve" }),
+          },
+        );
+        if (res.ok) success += 1;
+      } catch {
+        // ignore per-item failures here; summarized via toast
+      }
+    }
+    setBulkSellersLoading(false);
+
+    if (success === 0) {
+      addToast("Could not approve pending sellers", "error");
+    } else if (success === targets.length) {
+      addToast(
+        `Approved ${success} seller${success === 1 ? "" : "s"}`,
+        "success",
+      );
+    } else {
+      addToast(
+        `Approved ${success} of ${targets.length} sellers (some failed)`,
+        "error",
+      );
+    }
+
+    await loadQueue();
+  }
+
   async function decideFlag(decision: "approve" | "ban") {
     if (!selectedFlag) return;
     const response = await fetch(`/api/admin/review/flags/${selectedFlag.id}`, {
@@ -198,6 +268,46 @@ function AdminReviewPage({ adminName }: Props) {
 
   const initials = (name: string | null, email: string) =>
     (name ?? email).charAt(0).toUpperCase();
+
+  const pendingSellersCount = useMemo(
+    () =>
+      pendingSellers.filter(
+        (submission) => submission.status === VerificationStatus.PENDING,
+      ).length,
+    [pendingSellers],
+  );
+
+  const pendingFlagsCount = useMemo(
+    () =>
+      flaggedListings.filter(
+        (flag) => flag.status === FraudFlagStatus.PENDING_REVIEW,
+      ).length,
+    [flaggedListings],
+  );
+
+  const sellerStatusLabel = (status: SellerStatusFilter) => {
+    switch (status) {
+      case VerificationStatus.APPROVED:
+        return "Approved";
+      case VerificationStatus.REJECTED:
+        return "Rejected";
+      case VerificationStatus.PENDING:
+      default:
+        return "Pending";
+    }
+  };
+
+  const flagStatusLabel = (status: FlagStatusFilter) => {
+    switch (status) {
+      case FraudFlagStatus.APPROVED:
+        return "Approved";
+      case FraudFlagStatus.BANNED:
+        return "Banned";
+      case FraudFlagStatus.PENDING_REVIEW:
+      default:
+        return "Pending review";
+    }
+  };
 
   return (
     <>
@@ -343,6 +453,71 @@ function AdminReviewPage({ adminName }: Props) {
           display: flex;
           justify-content: flex-end;
           margin-bottom: 20px;
+        }
+
+        .ar-subtoolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+        }
+        .ar-filter-group {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .ar-filter-label {
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--text-muted);
+        }
+        .ar-filter-pill {
+          border: 1px solid var(--border-glass);
+          background: var(--bg-card);
+          color: var(--text-secondary);
+          font-size: 12px;
+          font-weight: 500;
+          padding: 4px 10px;
+          border-radius: 999px;
+          cursor: pointer;
+          transition:
+            background 0.15s,
+            color 0.15s,
+            border-color 0.15s;
+        }
+        .ar-filter-pill:hover {
+          background: var(--bg-card-hover);
+          color: var(--text-primary);
+        }
+        .ar-filter-pill.active {
+          background: var(--accent-glow);
+          color: var(--accent);
+          border-color: rgba(16,185,129,0.4);
+        }
+        .ar-bulk-btn {
+          border: 1px solid rgba(59,130,246,0.4);
+          background: rgba(37,99,235,0.15);
+          color: #93c5fd;
+          font-size: 12px;
+          font-weight: 600;
+          padding: 6px 12px;
+          border-radius: 999px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .ar-bulk-btn:hover:not(:disabled) {
+          background: rgba(37,99,235,0.22);
+        }
+        .ar-bulk-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         /* ── Tabs ── */
@@ -739,7 +914,7 @@ function AdminReviewPage({ adminName }: Props) {
               <div
                 className={`ar-stat-value${pendingSellers.length > 0 ? " warn" : ""}`}
               >
-                {loading ? "—" : pendingSellers.length}
+                {loading ? "—" : pendingSellersCount}
               </div>
             </div>
             <div className="ar-stat-card">
@@ -747,7 +922,7 @@ function AdminReviewPage({ adminName }: Props) {
               <div
                 className={`ar-stat-value${flaggedListings.length > 0 ? " warn" : ""}`}
               >
-                {loading ? "—" : flaggedListings.length}
+                {loading ? "—" : pendingFlagsCount}
               </div>
             </div>
             <div className="ar-stat-card">
@@ -756,14 +931,14 @@ function AdminReviewPage({ adminName }: Props) {
                 className={`ar-stat-value ar-stat-status${
                   loading
                     ? ""
-                    : pendingSellers.length + flaggedListings.length === 0
+                    : pendingSellersCount + pendingFlagsCount === 0
                       ? " ok"
                       : " warn"
                 }`}
               >
                 {loading
                   ? "Loading…"
-                  : pendingSellers.length + flaggedListings.length === 0
+                  : pendingSellersCount + pendingFlagsCount === 0
                     ? "All clear ✓"
                     : "Needs review"}
               </div>
@@ -799,219 +974,352 @@ function AdminReviewPage({ adminName }: Props) {
 
           {/* ── Sellers tab ── */}
           {activeTab === "sellers" && (
-            <div className="ar-panel-layout">
-              <div className="ar-queue-panel">
-                <div className="ar-queue-header">
-                  Pending · {pendingSellers.length}
+            <>
+              <div className="ar-subtoolbar">
+                <div className="ar-filter-group">
+                  <span className="ar-filter-label">Status</span>
+                  <button
+                    type="button"
+                    className={`ar-filter-pill${
+                      sellerStatusFilter === VerificationStatus.PENDING
+                        ? " active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setSellerStatusFilter(VerificationStatus.PENDING);
+                      setSelectedSubmissionId(null);
+                    }}
+                  >
+                    Pending
+                  </button>
+                  <button
+                    type="button"
+                    className={`ar-filter-pill${
+                      sellerStatusFilter === VerificationStatus.APPROVED
+                        ? " active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setSellerStatusFilter(VerificationStatus.APPROVED);
+                      setSelectedSubmissionId(null);
+                    }}
+                  >
+                    Approved
+                  </button>
+                  <button
+                    type="button"
+                    className={`ar-filter-pill${
+                      sellerStatusFilter === VerificationStatus.REJECTED
+                        ? " active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setSellerStatusFilter(VerificationStatus.REJECTED);
+                      setSelectedSubmissionId(null);
+                    }}
+                  >
+                    Rejected
+                  </button>
                 </div>
-                {pendingSellers.length === 0 ? (
-                  <div className="ar-queue-empty">No pending submissions</div>
-                ) : (
-                  pendingSellers.map((s) => (
+                {sellerStatusFilter === VerificationStatus.PENDING &&
+                  filteredSellers.length > 0 && (
                     <button
                       type="button"
-                      key={s.id}
-                      className={`ar-queue-item${selectedSubmissionId === s.id ? " active" : ""}`}
-                      onClick={() => setSelectedSubmissionId(s.id)}
+                      className="ar-bulk-btn"
+                      onClick={() => void bulkApprovePendingSellers()}
+                      disabled={bulkSellersLoading}
                     >
-                      <div className="ar-queue-item-avatar">
-                        {initials(s.user.name, s.user.email)}
-                      </div>
-                      <div className="ar-queue-item-info">
-                        <div className="ar-queue-item-name">
-                          {s.user.name || s.user.email}
-                        </div>
-                        <div className="ar-queue-item-sub">
-                          {fmtDate(s.submittedAt)}
-                        </div>
-                      </div>
-                      <span className="ar-queue-chevron">›</span>
+                      {bulkSellersLoading
+                        ? "Approving…"
+                        : `Approve all pending (${filteredSellers.length})`}
                     </button>
-                  ))
-                )}
+                  )}
               </div>
 
-              <div className="ar-detail-panel">
-                {selectedSubmission ? (
-                  <div className="ar-card">
-                    <div className="ar-card-header">
-                      <div>
-                        <div className="ar-card-title">
-                          {selectedSubmission.user.name ||
-                            selectedSubmission.user.email}
-                        </div>
-                        <div className="ar-card-meta">
-                          {selectedSubmission.user.email}
-                          {mounted && (
-                            <>
-                              {" "}
-                              · Submitted{" "}
-                              {fmtDateTime(selectedSubmission.submittedAt)}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <span className="ar-pill ar-pill-pending">
-                        ⏳ Pending
-                      </span>
-                    </div>
-                    <div className="ar-card-body">
-                      <div className="ar-pdf-grid">
-                        <div>
-                          <div className="ar-pdf-label">Government ID</div>
-                          <PdfViewer
-                            title="Government ID"
-                            url={selectedSubmission.govIdDocumentUrl}
-                          />
-                        </div>
-                        <div>
-                          <div className="ar-pdf-label">Proof of Ownership</div>
-                          <PdfViewer
-                            title="Proof of ownership"
-                            url={selectedSubmission.ownershipProofUrl}
-                          />
-                        </div>
-                      </div>
-                      <div className="ar-field">
-                        <label className="ar-field-label">
-                          Rejection reason{" "}
-                          <span className="ar-field-hint">
-                            (required to reject)
-                          </span>
-                        </label>
-                        <textarea
-                          className="ar-textarea"
-                          rows={3}
-                          value={sellerDecisionReason}
-                          onChange={(e) =>
-                            setSellerDecisionReason(e.target.value)
-                          }
-                          placeholder="Describe the reason for rejection…"
-                        />
-                      </div>
-                      <div className="ar-actions">
-                        <button
-                          type="button"
-                          className="ar-btn ar-btn-approve"
-                          onClick={() => decideSeller("approve")}
-                        >
-                          ✓ Approve seller
-                        </button>
-                        <button
-                          type="button"
-                          className="ar-btn ar-btn-reject"
-                          onClick={() => decideSeller("reject")}
-                        >
-                          ✕ Reject seller
-                        </button>
-                      </div>
-                    </div>
+              <div className="ar-panel-layout">
+                <div className="ar-queue-panel">
+                  <div className="ar-queue-header">
+                    {sellerStatusLabel(sellerStatusFilter)} ·{" "}
+                    {filteredSellers.length}
                   </div>
+                  {filteredSellers.length === 0 ? (
+                    <div className="ar-queue-empty">
+                      No submissions in this view
+                    </div>
+                  ) : (
+                    filteredSellers.map((s) => (
+                      <button
+                        type="button"
+                        key={s.id}
+                        className={`ar-queue-item${
+                          selectedSubmissionId === s.id ? " active" : ""
+                        }`}
+                        onClick={() => setSelectedSubmissionId(s.id)}
+                      >
+                        <div className="ar-queue-item-avatar">
+                          {initials(s.user.name, s.user.email)}
+                        </div>
+                        <div className="ar-queue-item-info">
+                          <div className="ar-queue-item-name">
+                            {s.user.name || s.user.email}
+                          </div>
+                          <div className="ar-queue-item-sub">
+                            {fmtDate(s.submittedAt)}
+                          </div>
+                        </div>
+                        <span className="ar-queue-chevron">›</span>
+                      </button>
+                    ))
+                  )}
                 ) : (
-                  <div className="ar-empty-detail">
-                    <div className="ar-empty-icon">👤</div>
-                    Select a submission from the queue to review
                   </div>
-                )}
+
+                <div className="ar-detail-panel">
+                  {selectedSubmission ? (
+                    <div className="ar-card">
+                      <div className="ar-card-header">
+                        <div>
+                          <div className="ar-card-title">
+                            {selectedSubmission.user.name ||
+                              selectedSubmission.user.email}
+                          </div>
+                          <div className="ar-card-meta">
+                            {selectedSubmission.user.email}
+                            {mounted && (
+                              <>
+                                {" "}
+                                · Submitted{" "}
+                                {fmtDateTime(selectedSubmission.submittedAt)}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <span className="ar-pill ar-pill-pending">
+                          ⏳ Pending
+                        </span>
+                      </div>
+                      <div className="ar-card-body">
+                        <div className="ar-pdf-grid">
+                          <div>
+                            <div className="ar-pdf-label">Government ID</div>
+                            <PdfViewer
+                              title="Government ID"
+                              url={selectedSubmission.govIdDocumentUrl}
+                            />
+                          </div>
+                          <div>
+                            <div className="ar-pdf-label">
+                              Proof of Ownership
+                            </div>
+                            <PdfViewer
+                              title="Proof of ownership"
+                              url={selectedSubmission.ownershipProofUrl}
+                            />
+                          </div>
+                        </div>
+                        <div className="ar-field">
+                          <label className="ar-field-label">
+                            Rejection reason{" "}
+                            <span className="ar-field-hint">
+                              (required to reject)
+                            </span>
+                          </label>
+                          <textarea
+                            className="ar-textarea"
+                            rows={3}
+                            value={sellerDecisionReason}
+                            onChange={(e) =>
+                              setSellerDecisionReason(e.target.value)
+                            }
+                            placeholder="Describe the reason for rejection…"
+                          />
+                        </div>
+                        <div className="ar-actions">
+                          <button
+                            type="button"
+                            className="ar-btn ar-btn-approve"
+                            onClick={() => decideSeller("approve")}
+                          >
+                            ✓ Approve seller
+                          </button>
+                          <button
+                            type="button"
+                            className="ar-btn ar-btn-reject"
+                            onClick={() => decideSeller("reject")}
+                          >
+                            ✕ Reject seller
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="ar-empty-detail">
+                      <div className="ar-empty-icon">👤</div>
+                      Select a submission from the queue to review
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           {/* ── Flags tab ── */}
           {activeTab === "flags" && (
-            <div className="ar-panel-layout">
-              <div className="ar-queue-panel">
-                <div className="ar-queue-header">
-                  Flagged · {flaggedListings.length}
+            <>
+              <div className="ar-subtoolbar">
+                <div className="ar-filter-group">
+                  <span className="ar-filter-label">Status</span>
+                  <button
+                    type="button"
+                    className={`ar-filter-pill${
+                      flagStatusFilter === FraudFlagStatus.PENDING_REVIEW
+                        ? " active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setFlagStatusFilter(FraudFlagStatus.PENDING_REVIEW);
+                      setSelectedFlagId(null);
+                    }}
+                  >
+                    Pending
+                  </button>
+                  <button
+                    type="button"
+                    className={`ar-filter-pill${
+                      flagStatusFilter === FraudFlagStatus.APPROVED
+                        ? " active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setFlagStatusFilter(FraudFlagStatus.APPROVED);
+                      setSelectedFlagId(null);
+                    }}
+                  >
+                    Approved
+                  </button>
+                  <button
+                    type="button"
+                    className={`ar-filter-pill${
+                      flagStatusFilter === FraudFlagStatus.BANNED
+                        ? " active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setFlagStatusFilter(FraudFlagStatus.BANNED);
+                      setSelectedFlagId(null);
+                    }}
+                  >
+                    Banned
+                  </button>
                 </div>
-                {flaggedListings.length === 0 ? (
-                  <div className="ar-queue-empty">No flagged listings</div>
-                ) : (
-                  flaggedListings.map((flag) => (
-                    <button
-                      type="button"
-                      key={flag.id}
-                      className={`ar-queue-item${selectedFlagId === flag.id ? " active" : ""}`}
-                      onClick={() => setSelectedFlagId(flag.id)}
-                    >
-                      <div
-                        className="ar-queue-item-avatar"
-                        style={{
-                          background: `color-mix(in srgb, ${scoreColor(flag.confidenceScore)} 12%, transparent)`,
-                          color: scoreColor(flag.confidenceScore),
-                          borderColor: `color-mix(in srgb, ${scoreColor(flag.confidenceScore)} 25%, transparent)`,
-                        }}
-                      >
-                        {flag.confidenceScore}
-                      </div>
-                      <div className="ar-queue-item-info">
-                        <div className="ar-queue-item-name">
-                          {flag.listing.title}
-                        </div>
-                        <div className="ar-queue-item-sub">
-                          {flag.listing.address}
-                        </div>
-                      </div>
-                      <span className="ar-queue-chevron">›</span>
-                    </button>
-                  ))
-                )}
               </div>
 
-              <div className="ar-detail-panel">
-                {selectedFlag ? (
-                  <div className="ar-card">
-                    <div className="ar-card-header">
-                      <div>
-                        <div className="ar-card-title">
-                          {selectedFlag.listing.title}
-                        </div>
-                        <div className="ar-card-meta">
-                          {selectedFlag.listing.address}
-                          <br />
-                          Seller:{" "}
-                          {selectedFlag.listing.seller.name ||
-                            selectedFlag.listing.seller.email}
-                        </div>
-                      </div>
-                      <span className="ar-pill ar-pill-fraud">🚨 Flagged</span>
+              <div className="ar-panel-layout">
+                <div className="ar-queue-panel">
+                  <div className="ar-queue-header">
+                    {flagStatusLabel(flagStatusFilter)} ·{" "}
+                    {filteredFlags.length}
+                  </div>
+                  {filteredFlags.length === 0 ? (
+                    <div className="ar-queue-empty">
+                      No flags in this view
                     </div>
-                    <div className="ar-card-body">
-                      <div className="ar-score-row">
-                        <div className="ar-score-header">
-                          <span className="ar-score-label">
-                            Fraud confidence score
-                          </span>
-                          <span
-                            className="ar-score-num"
-                            style={{
-                              color: scoreColor(selectedFlag.confidenceScore),
-                            }}
-                          >
-                            {selectedFlag.confidenceScore}
-                          </span>
+                  ) : (
+                    filteredFlags.map((flag) => (
+                      <button
+                        type="button"
+                        key={flag.id}
+                        className={`ar-queue-item${
+                          selectedFlagId === flag.id ? " active" : ""
+                        }`}
+                        onClick={() => setSelectedFlagId(flag.id)}
+                      >
+                        <div
+                          className="ar-queue-item-avatar"
+                          style={{
+                            background: `color-mix(in srgb, ${scoreColor(
+                              flag.confidenceScore,
+                            )} 12%, transparent)`,
+                            color: scoreColor(flag.confidenceScore),
+                            borderColor: `color-mix(in srgb, ${scoreColor(
+                              flag.confidenceScore,
+                            )} 25%, transparent)`,
+                          }}
+                        >
+                          {flag.confidenceScore}
                         </div>
-                        <div className="ar-score-track">
-                          <div
-                            className="ar-score-fill"
-                            style={{
-                              width: `${selectedFlag.confidenceScore}%`,
-                              background: scoreColor(
-                                selectedFlag.confidenceScore,
-                              ),
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {Object.keys(selectedFlag.breakdown ?? {}).length > 0 && (
-                        <>
-                          <div className="ar-section-label">
-                            Score breakdown
+                        <div className="ar-queue-item-info">
+                          <div className="ar-queue-item-name">
+                            {flag.listing.title}
                           </div>
-                          <div className="ar-breakdown">
-                            {Object.entries(selectedFlag.breakdown ?? {}).map(
-                              ([key, val]) => (
+                          <div className="ar-queue-item-sub">
+                            {flag.listing.address}
+                          </div>
+                        </div>
+                        <span className="ar-queue-chevron">›</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                <div className="ar-detail-panel">
+                  {selectedFlag ? (
+                    <div className="ar-card">
+                      <div className="ar-card-header">
+                        <div>
+                          <div className="ar-card-title">
+                            {selectedFlag.listing.title}
+                          </div>
+                          <div className="ar-card-meta">
+                            {selectedFlag.listing.address}
+                            <br />
+                            Seller:{" "}
+                            {selectedFlag.listing.seller.name ||
+                              selectedFlag.listing.seller.email}
+                          </div>
+                        </div>
+                        <span className="ar-pill ar-pill-fraud">
+                          🚨 Flagged
+                        </span>
+                      </div>
+                      <div className="ar-card-body">
+                        <div className="ar-score-row">
+                          <div className="ar-score-header">
+                            <span className="ar-score-label">
+                              Fraud confidence score
+                            </span>
+                            <span
+                              className="ar-score-num"
+                              style={{
+                                color: scoreColor(selectedFlag.confidenceScore),
+                              }}
+                            >
+                              {selectedFlag.confidenceScore}
+                            </span>
+                          </div>
+                          <div className="ar-score-track">
+                            <div
+                              className="ar-score-fill"
+                              style={{
+                                width: `${selectedFlag.confidenceScore}%`,
+                                background: scoreColor(
+                                  selectedFlag.confidenceScore,
+                                ),
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {Object.keys(selectedFlag.breakdown ?? {}).length >
+                          0 && (
+                          <>
+                            <div className="ar-section-label">
+                              Score breakdown
+                            </div>
+                            <div className="ar-breakdown">
+                              {Object.entries(
+                                selectedFlag.breakdown ?? {},
+                              ).map(([key, val]) => (
                                 <div key={key} className="ar-breakdown-row">
                                   <span className="ar-breakdown-key">
                                     {key.replace(/_/g, " ")}
@@ -1020,73 +1328,77 @@ function AdminReviewPage({ adminName }: Props) {
                                     {val}
                                   </span>
                                 </div>
-                              ),
-                            )}
-                          </div>
-                        </>
-                      )}
+                              ))}
+                            </div>
+                          </>
+                        )}
 
-                      {(selectedFlag.matchedImages ?? []).length > 0 && (
-                        <>
-                          <div className="ar-section-label">Matched images</div>
-                          <div className="ar-image-row">
-                            {(selectedFlag.matchedImages ?? []).map((url) => (
-                              <a
-                                key={url}
-                                href={url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <img
-                                  src={url}
-                                  alt="Matched reference"
-                                  className="ar-match-img"
-                                />
-                              </a>
-                            ))}
-                          </div>
-                        </>
-                      )}
+                        {(selectedFlag.matchedImages ?? []).length > 0 && (
+                          <>
+                            <div className="ar-section-label">
+                              Matched images
+                            </div>
+                            <div className="ar-image-row">
+                              {(selectedFlag.matchedImages ?? []).map(
+                                (url) => (
+                                  <a
+                                    key={url}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <img
+                                      src={url}
+                                      alt="Matched reference"
+                                      className="ar-match-img"
+                                    />
+                                  </a>
+                                ),
+                              )}
+                            </div>
+                          </>
+                        )}
 
-                      <div className="ar-field">
-                        <label className="ar-field-label">
-                          Admin notes{" "}
-                          <span className="ar-field-hint">(optional)</span>
-                        </label>
-                        <textarea
-                          className="ar-textarea"
-                          rows={3}
-                          value={flagNotes}
-                          onChange={(e) => setFlagNotes(e.target.value)}
-                          placeholder="Add internal notes about this listing…"
-                        />
-                      </div>
-                      <div className="ar-actions">
-                        <button
-                          type="button"
-                          className="ar-btn ar-btn-approve"
-                          onClick={() => decideFlag("approve")}
-                        >
-                          ✓ Override — approve listing
-                        </button>
-                        <button
-                          type="button"
-                          className="ar-btn ar-btn-ban"
-                          onClick={() => decideFlag("ban")}
-                        >
-                          🚫 Ban seller
-                        </button>
+                        <div className="ar-field">
+                          <label className="ar-field-label">
+                            Admin notes{" "}
+                            <span className="ar-field-hint">(optional)</span>
+                          </label>
+                          <textarea
+                            className="ar-textarea"
+                            rows={3}
+                            value={flagNotes}
+                            onChange={(e) => setFlagNotes(e.target.value)}
+                            placeholder="Add internal notes about this listing…"
+                          />
+                        </div>
+                        <div className="ar-actions">
+                          <button
+                            type="button"
+                            className="ar-btn ar-btn-approve"
+                            onClick={() => decideFlag("approve")}
+                          >
+                            ✓ Override — approve listing
+                          </button>
+                          <button
+                            type="button"
+                            className="ar-btn ar-btn-ban"
+                            onClick={() => decideFlag("ban")}
+                          >
+                            🚫 Ban seller
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="ar-empty-detail">
-                    <div className="ar-empty-icon">🚨</div>
-                    Select a flagged listing from the queue to review
-                  </div>
-                )}
+                  ) : (
+                    <div className="ar-empty-detail">
+                      <div className="ar-empty-icon">🚨</div>
+                      Select a flagged listing from the queue to review
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
 

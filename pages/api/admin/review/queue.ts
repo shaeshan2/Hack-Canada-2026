@@ -26,8 +26,8 @@ export default auth0.withApiAuthRequired(async function handler(req: NextApiRequ
 
   const [pendingSellers, flaggedListings] = await Promise.all([
     prisma.sellerVerificationSubmission.findMany({
-      where: { status: VerificationStatus.PENDING },
-      orderBy: { submittedAt: "asc" },
+      // Return recent submissions across all statuses; client applies filters.
+      orderBy: { submittedAt: "desc" },
       include: {
         user: {
           select: {
@@ -41,8 +41,8 @@ export default auth0.withApiAuthRequired(async function handler(req: NextApiRequ
       }
     }),
     prisma.fraudFlag.findMany({
-      where: { status: FraudFlagStatus.PENDING_REVIEW },
-      orderBy: { createdAt: "asc" },
+      // Return recent fraud flags across all statuses; client applies filters.
+      orderBy: { createdAt: "desc" },
       include: {
         listing: {
           include: {
