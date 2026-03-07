@@ -2,6 +2,7 @@ import { GetServerSideProps } from "next";
 import Link from "next/link";
 import { useMemo, useState, useEffect, useRef } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import "../lib/auth0-env";
 import { auth0 } from "../lib/auth0";
 import { prisma } from "../lib/prisma";
@@ -101,10 +102,12 @@ const SELLER_VALUES = [
 
 /* ── Component ──────────────────────────────────────── */
 export default function Home({ listings, user, role }: HomeProps) {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [howTab, setHowTab] = useState<"buyer" | "seller">("buyer");
   const [homePrice, setHomePrice] = useState(800000);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [buyerQuery, setBuyerQuery] = useState("");
   const calcRef = useRef<HTMLDivElement>(null);
 
   const roleLabel =
@@ -202,10 +205,28 @@ export default function Home({ listings, user, role }: HomeProps) {
               <p className="hero-subtitle">
                 Buy and sell homes directly. No commissions. No middlemen. Just verified listings.
               </p>
+              <form
+                className="hero-search-inline"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const q = buyerQuery.trim();
+                  if (!q) return;
+                  void router.push(`/browse?q=${encodeURIComponent(q)}`);
+                }}
+              >
+                <input
+                  value={buyerQuery}
+                  onChange={(event) => setBuyerQuery(event.target.value)}
+                  placeholder='3-bed under $700k near schools in Mississauga'
+                  aria-label="Search homes with natural language"
+                />
+                <button type="submit">Search Homes</button>
+              </form>
+              <p className="hero-search-note">
+                Natural-language search for buyers. Or{" "}
+                <a href="/browse">browse all listings</a>.
+              </p>
               <div className="hero-ctas">
-                <a href="#listings" className="btn btn-primary">
-                  Browse Listings →
-                </a>
                 <a href="/api/auth/signup-seller" className="btn btn-outline">
                   List Your Property
                 </a>

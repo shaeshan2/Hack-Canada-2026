@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { nearbyQuerySchema, parseQuery } from "../../../lib/api/validation";
 import { sendError } from "../../../lib/api/errors";
@@ -22,6 +22,24 @@ function haversineKm(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
+type NearbyListingRecord = {
+  id: string;
+  title: string;
+  description: string;
+  address: string;
+  price: number;
+  bedrooms: number | null;
+  sqft: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  imageUrl: string | null;
+  confidenceScore: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+  seller: { id: string; name: string | null; email: string };
+  photos: Array<{ id: string; url: string; order: number }>;
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -56,14 +74,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     where.bedrooms = bedrooms;
   }
 
-  const listings = await prisma.listing.findMany({
+  const listings = (await prisma.listing.findMany({
     where,
     include: {
       seller: { select: { id: true, name: true, email: true } },
       photos: { orderBy: { order: "asc" } },
     },
     orderBy: { createdAt: "desc" },
-  });
+  })) as NearbyListingRecord[];
 
   const result = listings
     .map((listing) => {
