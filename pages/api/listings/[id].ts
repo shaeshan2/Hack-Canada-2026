@@ -1,34 +1,31 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../lib/prisma";
+import { listingIdParamSchema, parseQuery } from "../../../lib/api/validation";
+import { sendError, sendNotFound } from "../../../lib/api/errors";
 
-/**
- * GET /api/listings/[id]
- * Returns a single listing by id with seller info.
- */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
-    res.status(405).json({ error: "Method not allowed" });
+    sendError(res, "Method not allowed", "BAD_REQUEST", 405);
     return;
   }
 
-  const id = req.query.id as string;
-  if (!id) {
-    res.status(400).json({ error: "Listing id required" });
+  const parsed = parseQuery(listingIdParamSchema, { id: req.query.id });
+  if (!parsed.success) {
+    sendError(res, parsed.error, "VALIDATION_ERROR", 422);
     return;
   }
 
   const listing = await prisma.listing.findUnique({
-    where: { id },
+    where: { id: parsed.data.id },
     include: {
-      seller: {
-        select: { id: true, name: true, email: true }
-      }
-    }
+      seller: { select: { id: true, name: true, email: true } },
+      photos: { orderBy: { order: "asc" } },
+    },
   });
 
   if (!listing) {
-    res.status(404).json({ error: "Listing not found" });
+    sendNotFound(res, "Listing");
     return;
   }
 

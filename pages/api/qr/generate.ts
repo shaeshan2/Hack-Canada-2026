@@ -1,42 +1,40 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import QRCode from "qrcode";
 import { prisma } from "../../../lib/prisma";
+import { config } from "../../../lib/config";
+import { qrGenerateSchema, parseBody } from "../../../lib/api/validation";
+import { sendError, sendNotFound } from "../../../lib/api/errors";
 
-const APP_CLIP_BASE = process.env.NEXT_PUBLIC_APP_CLIP_URL || "https://deedscan.app/clip";
-
-/**
- * POST /api/qr/generate
- * Body: { listingId: string }
- * Returns: { qrDataUrl: string, url: string }
- * PNG as base64 data URL for easy display/download.
- */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    res.status(405).json({ error: "Method not allowed" });
+    sendError(res, "Method not allowed", "BAD_REQUEST", 405);
     return;
   }
 
-  const listingId = (req.body ?? {}).listingId ?? (req.query ?? {}).listingId;
-  if (!listingId || typeof listingId !== "string") {
-    res.status(400).json({ error: "listingId is required" });
+  const body = req.body ?? {};
+  const query = req.query ?? {};
+  const listingId = body.listingId ?? query.listingId;
+  const parsed = parseBody(qrGenerateSchema, { listingId });
+  if (!parsed.success) {
+    sendError(res, parsed.error, "VALIDATION_ERROR", 422);
     return;
   }
 
   const listing = await prisma.listing.findUnique({
-    where: { id: listingId },
-    select: { id: true }
+    where: { id: parsed.data.listingId },
+    select: { id: true },
   });
   if (!listing) {
-    res.status(404).json({ error: "Listing not found" });
+    sendNotFound(res, "Listing");
     return;
   }
 
-  const url = `${APP_CLIP_BASE}?id=${encodeURIComponent(listingId)}`;
+  const url = `${config.app.appClipUrl}?id=${encodeURIComponent(parsed.data.listingId)}`;
   const qrDataUrl = await QRCode.toDataURL(url, {
     type: "image/png",
     width: 400,
-    margin: 2
+    margin: 2,
   });
 
   res.status(200).json({ qrDataUrl, url });

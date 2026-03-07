@@ -51,10 +51,10 @@ function SellerPage({ userName }: SellerProps) {
   return (
     <main className="container">
       <header className="hero">
-        <h1>Seller Dashboard</h1>
-        <p>Create a house listing for {userName || "your account"}.</p>
+        <h1>DeedScan — Seller Dashboard</h1>
+        <p>Create your listing. Prices in CAD. No commission.</p>
         <div className="actions">
-          <a href="/">Back to listings</a>
+          <a href="/">Back to DeedScan</a>
           <a href="/api/auth/logout">Log out</a>
         </div>
       </header>
@@ -81,7 +81,7 @@ function SellerPage({ userName }: SellerProps) {
         </label>
 
         <label>
-          Price (USD)
+          Price (CAD)
           <input
             type="number"
             min={1}

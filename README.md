@@ -1,15 +1,17 @@
 # DeedScan
 
-A basic frontend and backend where:
-- sellers can create house listings
-- regular users can register/login and browse listings
-- authentication is handled by Auth0
-- relational data is managed with Prisma
+**No agent. No commission.** Canadian real estate marketplace: sellers list via QR on a for-sale sign; buyers scan, view listings, get AI price comparisons, and message sellers. Auth0 verifies sellers; confidence scores reduce fraud.
+
+- Sellers create listings (with photo upload), get QR for App Clip, run fraud-check
+- Buyers browse listings (CAD), message sellers (real-time chat)
+- Auth0 passwordless + role-based access (buyer, seller_pending, seller_verified, admin)
 
 ## Stack
-- Next.js (Pages Router, TypeScript)
+- Next.js 14 (Pages Router, TypeScript)
 - Auth0 (`@auth0/nextjs-auth0`)
-- Prisma ORM + SQLite
+- Prisma ORM + SQLite (Photo, Listing, Message, User)
+- Socket.io (chat server in `server/ws-server.js`)
+- Zod (validation), centralized errors and config (`lib/api/`, `lib/config.ts`)
 
 ## 1) Install
 
@@ -107,18 +109,22 @@ curl -s -X POST http://localhost:3000/api/listings/<LISTING_ID>/fraud-check | jq
 - `GET /api/listings` — list all listings
 - `GET /api/listings/[id]` — single listing
 - `GET /api/listings/nearby` — nearby (query: lat, lng, radius_km, price_min, price_max, bedrooms)
-- `POST /api/listings` — create listing (seller-only; body may include sqft, bedrooms, latitude, longitude)
+- `POST /api/listings` — create listing (seller-only; body may include sqft, bedrooms, latitude, longitude, photoUrls; returns confidenceScore)
 - `POST /api/listings/[id]/fraud-check` — run fraud check, set confidenceScore
-- `POST /api/price-estimate` — AI/mock price range (body: address, sqft, bedrooms)
+- `POST /api/upload` — multipart photo upload (seller-only); returns `{ urls }` for use in `photoUrls`
+- `POST /api/price-estimate` — AI/mock price range in CAD (body: address, sqft, bedrooms)
 - `POST /api/qr/generate` — QR code for App Clip URL (body: listingId)
 - `POST /api/auth/verify-token` — current user id & role (session)
 - `GET /api/messages?listingId=...&otherUserId=...` — chat history (auth)
 - `POST /api/messages` — send message (auth; body: recipientId, listingId, content)
 - `POST /api/profile/role` — set role (`BUYER` or `SELLER_PENDING`)
 
+**API naming:** We use REST-style paths (e.g. `POST /api/listings` instead of `/api/listing/create`). Full reference: **[docs/API.md](docs/API.md)** (error format, all endpoints, config).
+
 ## Prisma schema summary
 - `User` (`id`, `auth0Id`, `email`, `name`, `role`, `blockedReason`)
 - `Listing` (`id`, `title`, `description`, `address`, `price`, `imageUrl`, `sqft`, `bedrooms`, `latitude`, `longitude`, `confidenceScore`, `sellerId`)
+- `Photo` (`id`, `url`, `order`, `listingId`) — multiple images per listing
 - `Message` (`id`, `content`, `read`, `senderId`, `recipientId`, `listingId`, `createdAt`)
 
 Relationships:

@@ -39,7 +39,7 @@ model Listing {
   description String
   address     String
   price       Int
-  imageUrl        String?
+  imageUrl        String?   // first photo URL for backward compat
   sqft            Int?
   bedrooms        Int?
   latitude        Float?
@@ -47,9 +47,19 @@ model Listing {
   confidenceScore Int?     // 0-100; null = not yet run
   sellerId        String
   seller          User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  photos          Photo[]
   messages        Message[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  url       String   // e.g. /uploads/xxx.jpg or full URL
+  order     Int      @default(0) // display order
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model Message {

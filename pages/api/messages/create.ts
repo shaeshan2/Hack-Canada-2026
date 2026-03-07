@@ -5,16 +5,13 @@ import { Role } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { ensureDbUser } from "../../../lib/session-user";
 import { getSignupIntentRole } from "../../../lib/signup-intent";
+import { createMessageSchema, parseBody } from "../../../lib/api/validation";
+import { sendError, sendNotFound, sendValidation } from "../../../lib/api/errors";
 
-/**
- * POST /api/messages
- * Body: { recipientId, listingId, content }
- * Creates a message and returns it. WebSocket server will broadcast to recipient.
- */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    res.status(405).json({ error: "Method not allowed" });
+    sendError(res, "Method not allowed", "BAD_REQUEST", 405);
     return;
   }
 
@@ -24,38 +21,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   ) {
     const session = await getSession(protectedReq, protectedRes);
     if (!session?.user) {
-      protectedRes.status(401).json({ error: "Not authenticated" });
+      sendError(protectedRes, "Not authenticated", "UNAUTHORIZED", 401);
       return;
     }
 
     const signupRole = getSignupIntentRole(protectedReq);
     const dbUser = await ensureDbUser(session.user, signupRole);
-    const body = protectedReq.body ?? {};
-    const recipientId = body.recipientId as string;
-    const listingId = body.listingId as string;
-    const content = typeof body.content === "string" ? body.content.trim() : "";
 
-    if (!recipientId || !listingId || !content) {
-      protectedRes.status(400).json({ error: "recipientId, listingId, and content are required" });
+    const parsed = parseBody(createMessageSchema, protectedReq.body);
+    if (!parsed.success) {
+      sendValidation(protectedRes, parsed.error);
       return;
     }
+    const { recipientId, listingId, content } = parsed.data;
 
     if (dbUser.role !== Role.BUYER && dbUser.role !== Role.ADMIN) {
-      protectedRes.status(403).json({ error: "Only buyer/admin users can message sellers" });
+      sendError(protectedRes, "Only buyers or admins can message sellers", "FORBIDDEN", 403);
       return;
     }
 
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },
-      select: { sellerId: true }
+      select: { sellerId: true },
     });
     if (!listing) {
-      protectedRes.status(404).json({ error: "Listing not found" });
+      sendNotFound(protectedRes, "Listing");
       return;
     }
 
     if (recipientId !== listing.sellerId) {
-      protectedRes.status(400).json({ error: "Messages must target the listing seller" });
+      sendError(protectedRes, "Messages must target the listing seller", "BAD_REQUEST", 400);
       return;
     }
 
@@ -64,12 +59,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         senderId: dbUser.id,
         recipientId,
         listingId,
-        content
+        content,
       },
       include: {
         sender: { select: { id: true, name: true } },
-        recipient: { select: { id: true, name: true } }
-      }
+        recipient: { select: { id: true, name: true } },
+      },
     });
 
     protectedRes.status(201).json(message);

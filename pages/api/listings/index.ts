@@ -5,6 +5,9 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../lib/prisma";
 import { ensureDbUser } from "../../../lib/session-user";
 import { getSignupIntentRole } from "../../../lib/signup-intent";
+import { createListingSchema, parseBody } from "../../../lib/api/validation";
+import { sendError, sendValidation } from "../../../lib/api/errors";
+import { runFraudCheck } from "../../../lib/api/fraud-check";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
@@ -14,13 +17,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           select: {
             id: true,
             name: true,
-            email: true
-          }
-        }
+            email: true,
+          },
+        },
+        photos: { orderBy: { order: "asc" } },
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
-
     res.status(200).json(listings);
     return;
   }
@@ -32,42 +35,82 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ) {
       const session = await getSession(protectedReq, protectedRes);
       if (!session?.user) {
-        protectedRes.status(401).json({ error: "Not authenticated" });
+        sendError(protectedRes, "Not authenticated", "UNAUTHORIZED", 401);
         return;
       }
 
       const signupRole = getSignupIntentRole(protectedReq);
       const dbUser = await ensureDbUser(session.user, signupRole);
       if (dbUser.role !== Role.SELLER_VERIFIED) {
-        protectedRes.status(403).json({ error: "Only seller_verified users can create listings" });
+        sendError(protectedRes, "Only verified sellers can create listings", "FORBIDDEN", 403);
         return;
       }
 
-      const { title, description, address, price, imageUrl, sqft, bedrooms, latitude, longitude } = protectedReq.body ?? {};
-      if (!title || !description || !address || Number(price) <= 0) {
-        protectedRes.status(400).json({ error: "Missing or invalid listing fields" });
+      const parsed = parseBody(createListingSchema, protectedReq.body);
+      if (!parsed.success) {
+        sendValidation(protectedRes, parsed.error);
         return;
       }
+      const data = parsed.data;
+
+      const firstPhotoUrl = data.photoUrls?.length
+        ? data.photoUrls[0]
+        : data.imageUrl ?? null;
 
       const listing = await prisma.listing.create({
         data: {
-          title: String(title),
-          description: String(description),
-          address: String(address),
-          price: Number(price),
-          imageUrl: imageUrl ? String(imageUrl) : null,
-          sqft: sqft != null ? Number(sqft) : null,
-          bedrooms: bedrooms != null ? Number(bedrooms) : null,
-          latitude: latitude != null ? Number(latitude) : null,
-          longitude: longitude != null ? Number(longitude) : null,
-          sellerId: dbUser.id
-        }
+          title: data.title,
+          description: data.description,
+          address: data.address,
+          price: data.price,
+          imageUrl: firstPhotoUrl,
+          sqft: data.sqft ?? null,
+          bedrooms: data.bedrooms ?? null,
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
+          sellerId: dbUser.id,
+        },
       });
 
-      protectedRes.status(201).json(listing);
+      if (data.photoUrls?.length) {
+        await prisma.photo.createMany({
+          data: data.photoUrls.map((url, i) => ({
+            listingId: listing.id,
+            url,
+            order: i,
+          })),
+        });
+      }
+
+      // Run fraud-check (stub) and set confidenceScore
+      let confidenceScore: number | null = null;
+      let badge: "verified" | "pending" | "low" = "pending";
+      try {
+        const result = await runFraudCheck(listing.id);
+        confidenceScore = result.confidenceScore;
+        badge = result.badge;
+      } catch {
+        // keep confidenceScore null if fraud-check fails
+      }
+
+      const withPhotos = await prisma.listing.findUnique({
+        where: { id: listing.id },
+        include: {
+          seller: { select: { id: true, name: true, email: true } },
+          photos: { orderBy: { order: "asc" } },
+        },
+      });
+
+      protectedRes.status(201).json({
+        ...withPhotos,
+        confidenceScore: withPhotos?.confidenceScore ?? confidenceScore,
+        badge: withPhotos?.confidenceScore != null
+          ? (withPhotos.confidenceScore >= 85 ? "verified" : withPhotos.confidenceScore >= 60 ? "pending" : "low")
+          : badge,
+      });
     })(req, res);
   }
 
   res.setHeader("Allow", "GET, POST");
-  res.status(405).json({ error: "Method not allowed" });
+  res.status(405).json({ error: "Method not allowed", code: "BAD_REQUEST" });
 }

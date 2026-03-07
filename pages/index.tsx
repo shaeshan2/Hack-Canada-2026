@@ -49,25 +49,25 @@ export default function Home({ listings, user, role }: HomeProps) {
   return (
     <main className="container">
       <header className="hero">
-        <h1>House Marketplace</h1>
-        <p>Choose your signup path: buyer accounts browse and message, seller accounts submit for verification before listing.</p>
+        <h1>DeedScan</h1>
+        <p>No agent. No commission. Browse Canadian listings and message sellers directly.</p>
         <div className="actions">
           {!user && <a href="/api/auth/login">Log in</a>}
           {!user && <a href="/api/auth/signup-buyer">Sign up as buyer</a>}
           {!user && <a href="/api/auth/signup-seller">Sign up as seller</a>}
           {user && <a href="/api/auth/logout">Log out</a>}
-          {sellerMode && <a href="/seller">Open seller dashboard</a>}
+          {sellerMode && <a href="/seller">Seller dashboard</a>}
         </div>
       </header>
       {!user && (
         <section className="stats">
           <div className="card">
-            <h3>Buyer signup</h3>
-            <p>Immediate browsing and seller messaging access.</p>
+            <h3>Buyer</h3>
+            <p>Browse listings and message sellers. No commission.</p>
           </div>
           <div className="card">
-            <h3>Seller signup</h3>
-            <p>Account starts as pending; listing creation unlocks after verification.</p>
+            <h3>Seller</h3>
+            <p>Verify once, then list your home. Buyers scan your sign&apos;s QR to view and message.</p>
           </div>
         </section>
       )}
@@ -91,19 +91,19 @@ export default function Home({ listings, user, role }: HomeProps) {
           <p>{listings.length}</p>
         </div>
         <div className="card">
-          <h3>Average Price</h3>
-          <p>${avgPrice.toLocaleString()}</p>
+          <h3>Average Price (CAD)</h3>
+          <p>${avgPrice.toLocaleString("en-CA")}</p>
         </div>
       </section>
 
       <section>
-        <h2>Available Houses</h2>
+        <h2>Listings</h2>
         <div className="grid">
           {listings.map((listing) => (
             <article key={listing.id} className="card listing">
               {listing.imageUrl && <img src={listing.imageUrl} alt={listing.title} />}
               <h3>{listing.title}</h3>
-              <p className="price">${listing.price.toLocaleString()}</p>
+              <p className="price">${listing.price.toLocaleString("en-CA")} CAD</p>
               <p>{listing.address}</p>
               <p>{listing.description}</p>
               <p className="seller">Seller: {listing.seller.name || listing.seller.email}</p>
