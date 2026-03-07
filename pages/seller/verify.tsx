@@ -232,15 +232,19 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     user = { name: session.user.name, email: session.user.email };
     role = dbUser.role;
 
-    const latest = await prisma.sellerVerificationSubmission.findFirst({
-      where: { userId: dbUser.id },
-      orderBy: { submittedAt: "desc" },
-    });
-    if (latest) {
-      submission = {
-        status: latest.status,
-        rejectionReason: latest.rejectionReason ?? undefined,
-      };
+    try {
+      const latest = await prisma.sellerVerificationSubmission.findFirst({
+        where: { userId: dbUser.id },
+        orderBy: { submittedAt: "desc" },
+      });
+      if (latest) {
+        submission = {
+          status: latest.status,
+          rejectionReason: latest.rejectionReason ?? undefined,
+        };
+      }
+    } catch (err) {
+      console.error("Failed to query sellerVerificationSubmission:", err);
     }
   }
 
