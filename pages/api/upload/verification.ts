@@ -73,7 +73,7 @@ export default async function handler(
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    const form = new formidable.IncomingForm({
+    const form = new formidable.Formidable({
       uploadDir,
       keepExtensions: false,
       maxFileSize: MAX_FILE_SIZE,
