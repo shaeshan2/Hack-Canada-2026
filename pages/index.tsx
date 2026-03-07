@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useMemo, useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import ListingCard, { type ListingCardData } from "../components/ListingCard";
 import "../lib/auth0-env";
 import { auth0 } from "../lib/auth0";
 import { prisma } from "../lib/prisma";
@@ -13,21 +14,7 @@ import {
 } from "../lib/signup-intent";
 
 /* ── Types ──────────────────────────────────────────── */
-type ListingView = {
-  id: string;
-  title: string;
-  description: string;
-  address: string;
-  price: number;
-  confidenceScore: number | null;
-  imageUrl: string | null;
-  createdAt: string;
-  seller: {
-    id: string;
-    name: string | null;
-    email: string;
-  };
-};
+type ListingView = ListingCardData;
 
 type HomeProps = {
   listings: ListingView[];
@@ -38,13 +25,6 @@ type HomeProps = {
 /* ── Helpers ────────────────────────────────────────── */
 function cad(n: number) {
   return n.toLocaleString("en-CA", { maximumFractionDigits: 0 });
-}
-
-function confidenceLabel(score: number | null) {
-  if (score == null) return { text: "Pending", cls: "na" };
-  if (score >= 85) return { text: `${score}/100`, cls: "high" };
-  if (score >= 60) return { text: `${score}/100`, cls: "medium" };
-  return { text: `${score}/100`, cls: "low" };
 }
 
 const COMMISSION_RATE = 0.05; // 5% typical agent commission
@@ -580,66 +560,14 @@ export default function Home({ listings, user, role }: HomeProps) {
 
             {listings.length > 0 ? (
               <div className="listings-grid">
-                {listings.map((listing, i) => {
-                  const badge = confidenceLabel(listing.confidenceScore);
-                  return (
-                    <article
-                      key={listing.id}
-                      className={`listing-card animate-in animate-in-delay-${(i % 3) + 1}`}
-                    >
-                      {listing.imageUrl ? (
-                        <img
-                          className="listing-card-image"
-                          src={listing.imageUrl}
-                          alt={listing.title}
-                        />
-                      ) : (
-                        <div className="listing-card-image-placeholder">🏠</div>
-                      )}
-                      <div className="listing-card-body">
-                        <div className="listing-card-meta">
-                          <span className={`confidence-badge ${badge.cls}`}>
-                            {badge.cls === "high"
-                              ? "✓ "
-                              : badge.cls === "low"
-                                ? "⚠ "
-                                : ""}
-                            {badge.text}
-                          </span>
-                        </div>
-                        <div className="listing-card-price">
-                          ${cad(listing.price)} CAD
-                        </div>
-                        <div className="listing-card-title">
-                          <Link href={`/listings/${listing.id}`}>
-                            {listing.title}
-                          </Link>
-                        </div>
-                        <div className="listing-card-address">
-                          📍 {listing.address}
-                        </div>
-                        <div className="listing-card-desc">
-                          {listing.description}
-                        </div>
-                      </div>
-                      <div className="listing-card-footer">
-                        <span>Seller: {listing.seller.name || "Unknown"}</span>
-                        {user && (
-                          <a
-                            href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}
-                          >
-                            Message seller
-                          </a>
-                        )}
-                        <span>
-                          {new Date(listing.createdAt).toLocaleDateString(
-                            "en-CA",
-                          )}
-                        </span>
-                      </div>
-                    </article>
-                  );
-                })}
+                {listings.map((listing, i) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    index={i}
+                    showMessageSeller={Boolean(user)}
+                  />
+                ))}
               </div>
             ) : (
               <div className="empty-listings animate-in">
