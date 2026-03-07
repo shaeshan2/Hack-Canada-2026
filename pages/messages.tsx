@@ -351,8 +351,13 @@ export default function MessagesPage({
                     return acc;
                   }, [] as JSX.Element[])}
                   {typingName && (
-                    <div className="message received typing">
+                    <div className="message received typing" aria-live="polite">
                       <span className="message-content">
+                        <span className="typing-dots" aria-hidden="true">
+                          <span />
+                          <span />
+                          <span />
+                        </span>
                         {typingName} is typing…
                       </span>
                     </div>

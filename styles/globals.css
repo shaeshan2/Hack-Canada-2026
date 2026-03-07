@@ -2077,6 +2077,11 @@ img {
   border: 1px solid var(--border-glass);
   color: var(--text-muted);
   font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
 }
 
 @keyframes typingPulse {
@@ -2092,6 +2097,44 @@ img {
 
 .message.typing .message-content {
   animation: typingPulse 1.5s ease-in-out infinite;
+}
+
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 42px;
+  justify-content: space-between;
+}
+
+.typing-dots span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+  animation: typingDot 1.2s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+@keyframes typingDot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
 }
 
 /* ── Chat Input Bar ───────────────────────────── */
