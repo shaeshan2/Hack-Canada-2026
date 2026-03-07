@@ -1,7 +1,7 @@
 import "../lib/auth0-env";
 import { withPageAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import { GetServerSideProps } from "next";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { ensureDbUser } from "../lib/session-user";
 import { clearSignupIntentCookie, getSignupIntentRole } from "../lib/signup-intent";
 
@@ -15,23 +15,31 @@ function SellerPage({ userName }: SellerProps) {
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
   const [price, setPrice] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
 
-    const response = await fetch("/api/listings", {
+    const selectedFiles = fileInputRef.current?.files;
+    if (!selectedFiles || selectedFiles.length === 0) {
+      setMessage("Please add at least one photo.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("address", address);
+    formData.append("price", String(Number(price)));
+    Array.from(selectedFiles).forEach((file) => {
+      formData.append("photos", file);
+    });
+
+    const response = await fetch("/api/listing/create", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        description,
-        address,
-        price: Number(price),
-        imageUrl: imageUrl || null
-      })
+      body: formData
     });
 
     if (!response.ok) {
@@ -40,12 +48,19 @@ function SellerPage({ userName }: SellerProps) {
       return;
     }
 
+    const payload = (await response.json()) as {
+      listingId: string;
+      initialConfidenceScore: number;
+    };
+
     setTitle("");
     setDescription("");
     setAddress("");
     setPrice("");
-    setImageUrl("");
-    setMessage("Listing created. You can now see it on the home page.");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setMessage(
+      `Listing created (ID: ${payload.listingId}) with initial confidence score ${payload.initialConfidenceScore}/100.`
+    );
   }
 
   return (
@@ -93,8 +108,8 @@ function SellerPage({ userName }: SellerProps) {
         </label>
 
         <label>
-          Image URL (optional)
-          <input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} />
+          Photos
+          <input ref={fileInputRef} type="file" accept="image/*" multiple required />
         </label>
 
         <button type="submit">Publish listing</button>

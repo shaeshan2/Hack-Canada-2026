@@ -37,7 +37,9 @@
 }
 
 /* ── Reset & Base ──────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -69,33 +71,71 @@ img {
 
 /* ── Animations ────────────────────────────────────── */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
-  50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.4); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.4);
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes countUp {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .animate-in {
@@ -103,10 +143,21 @@ img {
   opacity: 0;
 }
 
-.animate-in-delay-1 { animation-delay: 0.1s; }
-.animate-in-delay-2 { animation-delay: 0.2s; }
-.animate-in-delay-3 { animation-delay: 0.3s; }
-.animate-in-delay-4 { animation-delay: 0.4s; }
+.animate-in-delay-1 {
+  animation-delay: 0.1s;
+}
+
+.animate-in-delay-2 {
+  animation-delay: 0.2s;
+}
+
+.animate-in-delay-3 {
+  animation-delay: 0.3s;
+}
+
+.animate-in-delay-4 {
+  animation-delay: 0.4s;
+}
 
 /* ── Layout ────────────────────────────────────────── */
 .landing-container {
@@ -280,8 +331,7 @@ img {
     linear-gradient(180deg,
       rgba(10, 15, 26, 0.4) 0%,
       rgba(10, 15, 26, 0.7) 50%,
-      var(--bg-primary) 100%
-    );
+      var(--bg-primary) 100%);
 }
 
 .hero-content {
@@ -1088,6 +1138,172 @@ img {
   gap: 10px;
 }
 
+/* ── Role Selection Modal ──────────────────────────── */
+.role-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: modalFadeIn 0.25s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.role-modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  max-width: 640px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+.role-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.role-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.role-modal-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.role-modal-header h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.role-modal-header p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.role-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px;
+  background: var(--bg-glass);
+  border: 2px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.role-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15);
+  background: var(--bg-card-hover);
+}
+
+.role-card-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--accent-glow);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 16px;
+}
+
+.role-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.role-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.role-card-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-light);
+  margin-top: auto;
+}
+
+.role-card:hover .role-card-arrow {
+  gap: 10px;
+}
+
+@media (max-width: 520px) {
+  .role-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .role-modal {
+    padding: 28px 20px;
+  }
+}
+
 /* ── Responsive ────────────────────────────────────── */
 @media (max-width: 1024px) {
   .hero-content {
@@ -1168,126 +1384,3 @@ img {
     text-align: center;
   }
 }
-
-/* Listing detail */
-.listing-detail .listing-photos img {
-  width: 100%;
-  max-height: 320px;
-  object-fit: cover;
-  border-radius: 10px;
-  margin-bottom: 0.5rem;
-}
-
-.confidence-badge {
-  display: inline-block;
-  padding: 0.25rem 0.6rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  margin: 0.25rem 0;
-}
-
-.badge-verified { background: #d4edda; color: #155724; }
-.badge-pending { background: #fff3cd; color: #856404; }
-.badge-low { background: #f8d7da; color: #721c24; }
-
-.button.primary {
-  display: inline-block;
-  padding: 0.6rem 1.2rem;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  margin-right: 0.5rem;
-}
-
-.button.primary:hover { filter: brightness(1.08); }
-
-/* Messages page */
-.messages-page .messages-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 1rem;
-  min-height: 70vh;
-}
-
-@media (max-width: 700px) {
-  .messages-page .messages-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-.conversations-list {
-  overflow-y: auto;
-  max-height: 70vh;
-}
-
-.conversation-item {
-  display: block;
-  padding: 0.75rem;
-  border-bottom: 1px solid var(--border);
-  margin: 0 -1rem;
-}
-
-.conversation-item:hover { background: var(--bg); }
-.conversation-item.active { background: #e8f4f8; border-left: 3px solid var(--accent); }
-
-.conversation-item strong { display: block; }
-.conversation-item .preview { font-size: 0.85rem; color: var(--muted); display: block; }
-.conversation-item .unread {
-  display: inline-block;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.75rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 10px;
-  margin-top: 0.25rem;
-}
-
-.chat-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 60vh;
-}
-
-.chat-header {
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0.5rem;
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.5rem 0;
-  min-height: 200px;
-}
-
-.message {
-  margin-bottom: 0.75rem;
-  max-width: 85%;
-}
-
-.message.sent { margin-left: auto; text-align: right; }
-.message.sent .message-content { background: var(--accent); color: #fff; border-radius: 12px 12px 2px 12px; }
-.message.received .message-content { background: var(--border); border-radius: 12px 12px 12px 2px; }
-
-.message-content {
-  display: inline-block;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.95rem;
-}
-
-.message-meta { font-size: 0.75rem; color: var(--muted); display: block; margin-top: 0.2rem; }
-.message.typing .message-content { font-style: italic; color: var(--muted); }
-
-.chat-input {
-  display: flex;
-  gap: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
-}
-
-.chat-input input { flex: 1; }
-.reconnect-hint { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
-.placeholder { color: var(--muted); padding: 2rem; }

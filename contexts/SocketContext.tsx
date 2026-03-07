@@ -7,7 +7,7 @@ const WS_URL =
   typeof window !== "undefined" && process.env.NEXT_PUBLIC_WS_URL
     ? process.env.NEXT_PUBLIC_WS_URL
     : typeof window !== "undefined"
-      ? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:3001`
+      ? `${window.location.protocol}//${window.location.hostname}:3001`
       : "";
 
 export type ChatMessage = {
@@ -55,13 +55,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     if (!WS_URL) return;
 
     let mounted = true;
-    fetch("/api/auth/verify-token", { method: "POST", credentials: "include" })
+    fetch("/api/auth/socket-token", { method: "POST", credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
-        if (!mounted || !data.authenticated || !data.userId) return;
+        if (!mounted || !data.authenticated || !data.userId || !data.token) return;
         setUserId(data.userId);
         const socket = io(WS_URL, {
-          auth: { userId: data.userId },
+          path: "/ws/chat",
+          query: { token: data.token },
           transports: ["websocket", "polling"],
         });
         socketRef.current = socket;
