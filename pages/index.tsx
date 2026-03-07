@@ -158,7 +158,15 @@ export default function Home({ listings, user, role }: HomeProps) {
             <div className="nav-auth">
               {!user ? (
                 <>
-                  <a href="/api/auth/login" className="nav-btn nav-btn-ghost">Log In</a>
+                  <div className="nav-login-dropdown">
+                    <button type="button" className="nav-btn nav-btn-ghost" aria-haspopup="true" aria-expanded="false">
+                      Log In
+                    </button>
+                    <div className="nav-login-dropdown-menu" role="menu">
+                      <a href="/api/auth/login-buyer" className="nav-login-dropdown-item" role="menuitem">As a Buyer</a>
+                      <a href="/api/auth/login-seller" className="nav-login-dropdown-item" role="menuitem">As a Seller</a>
+                    </div>
+                  </div>
                   <button className="nav-btn nav-btn-primary" onClick={() => setShowRoleModal(true)}>Get Started</button>
                 </>
               ) : (
