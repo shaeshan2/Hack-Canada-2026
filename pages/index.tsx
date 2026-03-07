@@ -148,8 +148,14 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({ req, r
   return {
     props: {
       listings: listings.map((listing) => ({
-        ...listing,
-        createdAt: listing.createdAt.toISOString()
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        address: listing.address,
+        price: listing.price,
+        imageUrl: listing.imageUrl,
+        createdAt: listing.createdAt.toISOString(),
+        seller: listing.seller
       })),
       user,
       role

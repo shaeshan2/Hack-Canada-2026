@@ -10,7 +10,8 @@
     "dev:all": "node scripts/run-all.js",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "seed:demo": "prisma db execute --file scripts/seed-demo.sql"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^3.5.0",
