@@ -1,12 +1,12 @@
 :root {
   color-scheme: light;
   font-family: "Segoe UI", sans-serif;
-  --bg: #f7f4ef;
+  --bg: #eaf2f1;
   --panel: #ffffff;
   --ink: #132023;
-  --accent: #bf5f42;
+  --accent: #0f7a6b;
   --muted: #6f7d81;
-  --border: #d9d4ca;
+  --border: #cddad6;
 }
 
 * {
@@ -15,7 +15,10 @@
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top left, #fff8ef, var(--bg));
+  background:
+    radial-gradient(1100px 500px at -10% -20%, #ffffff 0%, rgba(255, 255, 255, 0) 60%),
+    radial-gradient(900px 420px at 120% 0%, #d8ece7 0%, rgba(216, 236, 231, 0) 58%),
+    linear-gradient(180deg, #f5fbfa 0%, var(--bg) 100%);
   color: var(--ink);
 }
 
@@ -31,11 +34,11 @@ a:hover {
 
 .container {
   width: min(1100px, 92vw);
-  margin: 2rem auto 3rem;
+  margin: 2.5rem auto 4rem;
 }
 
 .hero {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .topbar {
@@ -133,38 +136,75 @@ a:hover {
 
 .stats {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  margin: 1rem 0 2rem;
+  margin: 1.5rem 0 2.5rem;
 }
 
 .grid {
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.35rem;
 }
 
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+  padding: 1.2rem;
+  box-shadow: 0 14px 36px rgba(13, 36, 33, 0.08);
 }
 
 .listing img {
   width: 100%;
-  height: 160px;
+  height: 190px;
   object-fit: cover;
-  border-radius: 10px;
-  margin-bottom: 0.8rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
 }
 
 .price {
-  font-size: 1.4rem;
-  margin: 0.4rem 0;
+  font-size: 1.45rem;
+  margin: 0.55rem 0 0.8rem;
   color: var(--accent);
 }
 
 .seller {
   color: var(--muted);
   font-size: 0.95rem;
+  margin-top: 0.9rem;
+}
+
+.listing h3 {
+  margin: 0.2rem 0 0.4rem;
+}
+
+.listing p {
+  line-height: 1.5;
+}
+
+.confidence-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+
+.confidence-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.confidence-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: #e8f7f4;
+  border: 1px solid #b4ded7;
+  color: #0b5c51;
+  font-weight: 700;
 }
 
 .form {

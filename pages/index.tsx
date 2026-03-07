@@ -12,6 +12,7 @@ type ListingView = {
   description: string;
   address: string;
   price: number;
+  confidenceScore: number | null;
   imageUrl: string | null;
   createdAt: string;
   seller: {
@@ -124,6 +125,10 @@ export default function Home({ listings, user, role }: HomeProps) {
           {listings.map((listing) => (
             <article key={listing.id} className="card listing">
               {listing.imageUrl && <img src={listing.imageUrl} alt={listing.title} />}
+              <div className="confidence-row">
+                <span className="confidence-label">Confidence</span>
+                <span className="confidence-pill">{listing.confidenceScore ?? "N/A"}{listing.confidenceScore != null ? "/100" : ""}</span>
+              </div>
               <h3>{listing.title}</h3>
               <p className="price">${listing.price.toLocaleString("en-CA")} CAD</p>
               <p>{listing.address}</p>
@@ -175,6 +180,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({ req, r
         description: listing.description,
         address: listing.address,
         price: listing.price,
+        confidenceScore: listing.confidenceScore,
         imageUrl: listing.imageUrl,
         createdAt: listing.createdAt.toISOString(),
         seller: listing.seller
