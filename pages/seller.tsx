@@ -88,7 +88,9 @@ export default function SellerPage({
     });
 
     if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+      const payload = (await res.json().catch(() => null)) as {
+        error?: string;
+      } | null;
       setMessage(payload?.error ?? "Could not create listing.");
       setSubmitting(false);
       return;
@@ -124,7 +126,7 @@ export default function SellerPage({
     setIsSuccess(true);
     setSubmitting(false);
     setMessage(
-      `Listing created! Confidence score: ${payload.initialConfidenceScore}/100. Your listing is now live.`
+      `Listing created! Confidence score: ${payload.initialConfidenceScore}/100. Your listing is now live.`,
     );
   }
 
@@ -134,7 +136,10 @@ export default function SellerPage({
     <>
       <Head>
         <title>Seller Dashboard — DeedScan</title>
-        <meta name="description" content="Create and manage your property listings on DeedScan. No commissions." />
+        <meta
+          name="description"
+          content="Create and manage your property listings on DeedScan. No commissions."
+        />
       </Head>
       <main className="seller-dashboard">
         <header className="seller-header">
@@ -149,18 +154,25 @@ export default function SellerPage({
         <div className="seller-content">
           <div className="seller-welcome">
             <h2>Welcome{userName ? `, ${userName}` : ""} 👋</h2>
-            <p>Create a new listing below. All prices are in CAD — no commission fees, ever.</p>
+            <p>
+              Create a new listing below. All prices are in CAD — no commission
+              fees, ever.
+            </p>
           </div>
 
           {message && (
-            <div className={`seller-message ${isSuccess ? "success" : "error"}`}>
+            <div
+              className={`seller-message ${isSuccess ? "success" : "error"}`}
+            >
               {message}
             </div>
           )}
 
           <form onSubmit={onSubmit} className="seller-form">
             <div className="seller-field">
-              <label className="seller-field-label" htmlFor="listing-title">Title</label>
+              <label className="seller-field-label" htmlFor="listing-title">
+                Title
+              </label>
               <input
                 id="listing-title"
                 type="text"
@@ -172,7 +184,9 @@ export default function SellerPage({
             </div>
 
             <div className="seller-field">
-              <label className="seller-field-label" htmlFor="listing-desc">Description</label>
+              <label className="seller-field-label" htmlFor="listing-desc">
+                Description
+              </label>
               <textarea
                 id="listing-desc"
                 placeholder="Describe your property — features, renovations, neighborhood, etc."
@@ -181,11 +195,15 @@ export default function SellerPage({
                 required
                 rows={5}
               />
-              <span className="seller-field-hint">A detailed description helps attract serious buyers.</span>
+              <span className="seller-field-hint">
+                A detailed description helps attract serious buyers.
+              </span>
             </div>
 
             <div className="seller-field">
-              <label className="seller-field-label" htmlFor="listing-address">Address</label>
+              <label className="seller-field-label" htmlFor="listing-address">
+                Address
+              </label>
               <input
                 id="listing-address"
                 type="text"
@@ -197,7 +215,9 @@ export default function SellerPage({
             </div>
 
             <div className="seller-field">
-              <label className="seller-field-label" htmlFor="listing-price">Price (CAD)</label>
+              <label className="seller-field-label" htmlFor="listing-price">
+                Price (CAD)
+              </label>
               <input
                 id="listing-price"
                 type="number"
@@ -207,11 +227,15 @@ export default function SellerPage({
                 onChange={(e) => setPrice(e.target.value)}
                 required
               />
-              <span className="seller-field-hint">Set your asking price — you keep 100% with DeedScan.</span>
+              <span className="seller-field-hint">
+                Set your asking price — you keep 100% with DeedScan.
+              </span>
             </div>
 
             <div className="seller-field">
-              <label className="seller-field-label" htmlFor="listing-photos">Photos</label>
+              <label className="seller-field-label" htmlFor="listing-photos">
+                Photos
+              </label>
               <input
                 id="listing-photos"
                 ref={fileInputRef}
@@ -220,10 +244,16 @@ export default function SellerPage({
                 multiple
                 required
               />
-              <span className="seller-field-hint">Upload up to 10 photos (JPEG, PNG, WebP). Max 10MB each.</span>
+              <span className="seller-field-hint">
+                Upload up to 10 photos (JPEG, PNG, WebP). Max 10MB each.
+              </span>
             </div>
 
-            <button type="submit" className="seller-submit" disabled={submitting}>
+            <button
+              type="submit"
+              className="seller-submit"
+              disabled={submitting}
+            >
               {submitting ? "Publishing…" : "Publish Listing →"}
             </button>
           </form>
