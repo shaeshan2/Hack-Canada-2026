@@ -1,4 +1,5 @@
 import { GetServerSideProps } from "next";
+import Link from "next/link";
 import { useMemo, useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import "../lib/auth0-env";
@@ -17,7 +18,11 @@ type ListingView = {
   confidenceScore: number | null;
   imageUrl: string | null;
   createdAt: string;
-  seller: { name: string | null; email: string };
+  seller: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
 };
 
 type HomeProps = {
@@ -161,6 +166,7 @@ export default function Home({ listings, user, role }: HomeProps) {
                   {role === "SELLER_VERIFIED" && (
                     <a href="/seller" className="nav-btn nav-btn-ghost">Dashboard</a>
                   )}
+                  <a href="/messages" className="nav-btn nav-btn-ghost">Messages</a>
                   <a href="/api/auth/logout" className="nav-btn nav-btn-ghost">Log Out</a>
                 </>
               )}
@@ -434,12 +440,19 @@ export default function Home({ listings, user, role }: HomeProps) {
                           </span>
                         </div>
                         <div className="listing-card-price">${cad(listing.price)} CAD</div>
-                        <div className="listing-card-title">{listing.title}</div>
+                        <div className="listing-card-title">
+                          <Link href={`/listings/${listing.id}`}>{listing.title}</Link>
+                        </div>
                         <div className="listing-card-address">📍 {listing.address}</div>
                         <div className="listing-card-desc">{listing.description}</div>
                       </div>
                       <div className="listing-card-footer">
                         <span>Seller: {listing.seller.name || listing.seller.email}</span>
+                        {user && (
+                          <a href={`/messages?listingId=${listing.id}&otherUserId=${listing.seller.id}`}>
+                            Message seller
+                          </a>
+                        )}
                         <span>{new Date(listing.createdAt).toLocaleDateString("en-CA")}</span>
                       </div>
                     </article>
@@ -538,7 +551,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({ req, r
   try {
     const raw = await prisma.listing.findMany({
       include: {
-        seller: { select: { name: true, email: true } },
+        seller: { select: { id: true, name: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
     });

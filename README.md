@@ -99,7 +99,7 @@ curl -s -X POST http://localhost:3000/api/listings/<LISTING_ID>/fraud-check | jq
 - `GET /api/messages?listingId=...&otherUserId=...` — chat history
 - `POST /api/messages` — send message (`buyer` or `admin`; body: `recipientId`, `listingId`, `content`)
 
-**WebSocket (chat):** Connect to `http://localhost:3001` with Socket.io; send `userId` in handshake auth or query. Event `send_message` with `{ recipientId, listingId, content }`; listen for `new_message`.
+**WebSocket (chat):** Connect to `http://localhost:3001` (or `NEXT_PUBLIC_WS_URL`) with Socket.io. Send **userId** in handshake **auth** (from `POST /api/auth/verify-token`). Events: **send_message** `{ recipientId, listingId, content }`; **typing_start** / **typing_stop** `{ listingId, recipientId }`. Server emits **new_message** (full message), **typing** `{ listingId, userId, name }`, **typing_stop** `{ listingId, userId }`, **error** `{ code, message }`.
 
 ## Main routes
 - `/` browse listings
