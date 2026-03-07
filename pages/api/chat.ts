@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import "../../lib/auth0-env";
 import { auth0 } from "../../lib/auth0";
 import { prisma } from "../../lib/prisma";
+import { GoogleGenAI } from "@google/genai";
 
 const GEMINI_MODEL = "gemini-3-flash-preview";
 
@@ -32,6 +33,8 @@ export default async function handler(
         res.status(500).json({ error: "AI chat is not configured" });
         return;
     }
+
+    const ai = new GoogleGenAI({ apiKey: key });
 
     // ── Build listing context ──
     let listingContext = "No listings are currently available.";
@@ -64,9 +67,9 @@ export default async function handler(
         // DB error — continue without listings
     }
 
-    const systemPrompt = `You are **Deedy** 🏠, the friendly (and slightly witty) AI assistant for DeedScan — Canada's commission-free real estate marketplace.
+    const systemPrompt = `You are the official AI assistant for DeedScan — Canada's commission-free real estate marketplace.
 
-Your personality: Helpful, warm, a bit cheeky. You love Canadian real estate and saving people money. You occasionally drop Canadian references (eh, timbits, sorry-not-sorry about saving $40K). Keep responses concise and conversational.
+Your tone consists of being highly professional, direct, and helpful. Do not be overly chatty or conversational. Keep answers concise.
 
 ## What You Know
 
@@ -95,16 +98,15 @@ Your personality: Helpful, warm, a bit cheeky. You love Canadian real estate and
 ### Current Listings
 ${listingContext}
 
-## Rules
-- Always answer in context of Canadian real estate and DeedScan
-- If asked about a specific listing, reference the data above
-- If asked about something you don't know, be honest and suggest they contact us
-- Keep answers under 200 words unless the user asks for detail
-- Use CAD ($) for all prices
-- Never make up listing details — only reference what's in the data above`;
+## Critical Directives
+- If the user asks a question about something NOT explicitly covered in the context above, you MUST ONLY reply with: "I have no idea." Do not attempt to guess, hallucinate, or be helpful outside of your context.
+- Keep answers professional, factual, and direct.
+- Do not use markdown formatting (like **bold** or *italics* asterisks) in your responses. Output plain text.
+- Do not use colloquialisms or attempt humor.
+- Use CAD ($) for prices.`;
 
     // ── Build conversation for Gemini ──
-    const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+    const contents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [];
 
     // Add conversation history if provided
     if (Array.isArray(history)) {
@@ -125,40 +127,23 @@ ${listingContext}
     });
 
     try {
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    system_instruction: {
-                        parts: [{ text: systemPrompt }],
-                    },
-                    contents,
-                }),
+        const response = await ai.models.generateContent({
+            model: GEMINI_MODEL,
+            contents,
+            config: {
+                systemInstruction: systemPrompt,
             },
-        );
+        });
 
-        if (!response.ok) {
-            const errText = await response.text().catch(() => "");
-            console.error("Gemini chat error:", response.status, errText);
-            res.status(502).json({
-                reply:
-                    "Sorry eh, my brain is a bit foggy right now. Try again in a moment! 🍁",
-            });
-            return;
-        }
-
-        const data = await response.json();
-        const reply: string =
-            data?.candidates?.[0]?.content?.parts?.[0]?.text ??
+        const reply =
+            response.text ??
             "Hmm, I'm at a loss for words — that's a first for me! Try asking again?";
 
         res.status(200).json({ reply });
     } catch (err) {
         console.error("Gemini chat failed:", err);
         res.status(500).json({
-            reply: "Something went wrong on my end. Give it another shot! 🏠",
+            reply: "Sorry eh, my brain is a bit foggy right now. Try again in a moment! 🍁",
         });
     }
 }

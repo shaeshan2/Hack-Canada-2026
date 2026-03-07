@@ -1,5 +1,6 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { GoogleGenAI } from "@google/genai";
 
 type VerificationResult = {
     approved: boolean;
@@ -18,7 +19,6 @@ async function readUploadAsBase64(url: string): Promise<{
     base64: string;
     mimeType: string;
 } | null> {
-    // Local uploads start with "/" and are under public/
     if (!url.startsWith("/")) return null;
 
     const absPath = path.join(process.cwd(), "public", url.replace(/^\//, ""));
@@ -45,9 +45,6 @@ async function readUploadAsBase64(url: string): Promise<{
 
 /**
  * Use Gemini Vision to analyze seller verification documents.
- *
- * Sends both the government ID and ownership proof to Gemini and asks it
- * to determine authenticity + whether the names match.
  */
 export async function verifyDocuments(
     govIdDocumentUrl: string,
@@ -73,18 +70,17 @@ export async function verifyDocuments(
         };
     }
 
+    const ai = new GoogleGenAI({ apiKey: key });
+
     try {
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [
+        const response = await ai.models.generateContent({
+            model: GEMINI_MODEL,
+            contents: [
+                {
+                    role: "user",
+                    parts: [
                         {
-                            parts: [
-                                {
-                                    text: `You are a document verification specialist for a real estate platform called DeedScan.
+                            text: `You are a document verification specialist for a real estate platform called DeedScan.
 
 You are given TWO documents:
 1. **Document 1 (Government-issued ID)** — should be a driver's license, passport, or similar government ID.
@@ -110,41 +106,28 @@ Rules:
 - If documents are clearly photos of real documents, be generous
 - If either document is illegible, blurry, or clearly fake, set approved=false
 - Be practical — this is for a hackathon real estate platform, not a bank`,
-                                },
-                                {
-                                    inline_data: {
-                                        mime_type: govIdData.mimeType,
-                                        data: govIdData.base64,
-                                    },
-                                },
-                                {
-                                    inline_data: {
-                                        mime_type: ownershipData.mimeType,
-                                        data: ownershipData.base64,
-                                    },
-                                },
-                            ],
+                        },
+                        {
+                            inlineData: {
+                                mimeType: govIdData.mimeType,
+                                data: govIdData.base64,
+                            },
+                        },
+                        {
+                            inlineData: {
+                                mimeType: ownershipData.mimeType,
+                                data: ownershipData.base64,
+                            },
                         },
                     ],
-                    generationConfig: { responseMimeType: "application/json" },
-                }),
+                },
+            ],
+            config: {
+                responseMimeType: "application/json",
             },
-        );
+        });
 
-        if (!response.ok) {
-            const errText = await response.text().catch(() => "");
-            console.error("Gemini verification API error:", response.status, errText);
-            return {
-                approved: false,
-                confidence: 0,
-                reason: `AI verification unavailable (API error ${response.status}). Manual review required.`,
-            };
-        }
-
-        const data = await response.json();
-        const text: string | undefined =
-            data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
+        const text = response.text;
         if (!text) {
             return {
                 approved: false,

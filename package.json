@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^4.16.0",
+    "@google/genai": "^1.44.0",
     "@prisma/adapter-better-sqlite3": "^7.4.2",
     "@prisma/client": "^7.4.2",
     "exifr": "^7.1.3",

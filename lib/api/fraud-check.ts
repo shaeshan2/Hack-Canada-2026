@@ -3,6 +3,7 @@ import * as path from "node:path";
 import { FraudFlagStatus } from "@prisma/client";
 import exifr from "exifr";
 import Jimp from "jimp";
+import { GoogleGenAI } from "@google/genai";
 import { prisma } from "../prisma";
 
 type ScoreBreakdown = {
@@ -95,9 +96,9 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -281,32 +282,16 @@ async function checkPriceSanity(address: string, price: number) {
   }
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `Is $${price.toLocaleString("en-CA")} reasonable for ${address}? Reply JSON only: {"score": 0-100, "reason": "..."}`
-                }
-              ]
-            }
-          ],
-          generationConfig: { responseMimeType: "application/json" }
-        })
-      }
-    );
+    const ai = new GoogleGenAI({ apiKey: key });
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Is $${price.toLocaleString("en-CA")} reasonable for ${address}? Reply JSON only: {"score": 0-100, "reason": "..."}`,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
 
-    if (!response.ok) {
-      return { score: 75, flags: ["Price sanity unavailable (Gemini API error)"] };
-    }
-
-    const data = await response.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = response.text;
     if (!text) {
       return { score: 75, flags: ["Price sanity unavailable (Gemini empty)"] };
     }

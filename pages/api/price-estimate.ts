@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { parseBody, priceEstimateSchema } from "../../lib/api/validation";
 import { sendError, sendValidation } from "../../lib/api/errors";
 import { config } from "../../lib/config";
+import { GoogleGenAI } from "@google/genai";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -20,17 +21,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const apiKey = config.optional.geminiApiKey;
   if (apiKey) {
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: `You are a real estate analyst. Given this property:
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `You are a real estate analyst. Given this property:
 - Address: ${address}
 - Size: ${sqft} sqft
 - Bedrooms: ${bedrooms}
@@ -39,20 +33,12 @@ Search recent sold prices within 1km, check school ratings, transit scores, and 
 
 Return JSON only with this exact shape:
 { "price_range": "$650,000 - $720,000", "explanation": "..." }`,
-                  },
-                ],
-              },
-            ],
-            generationConfig: { responseMimeType: "application/json" },
-          }),
-        }
-      );
-      if (!response.ok) {
-        const err = await response.text();
-        throw new Error(err || response.statusText);
-      }
-      const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        config: {
+          responseMimeType: "application/json",
+        },
+      });
+
+      const text = response.text;
       if (text) {
         const parsedJson = JSON.parse(text) as { price_range?: string; explanation?: string };
         res.status(200).json({

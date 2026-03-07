@@ -54,7 +54,7 @@ export default function ChatWidget() {
                 ...prev,
                 {
                     role: "model",
-                    text: "Oops, couldn't reach Deedy right now. Try again! 🏠",
+                    text: "Error connecting to AI service. Please try again later.",
                 },
             ]);
         } finally {
@@ -87,8 +87,8 @@ export default function ChatWidget() {
                     }}
                     aria-label="Chat with Deedy"
                 >
-                    <span className="deedy-fab-icon">🏠</span>
-                    <span className="deedy-fab-label">Deedy</span>
+                    <span className="deedy-fab-icon">🤖</span>
+                    <span className="deedy-fab-label">AI Assistant</span>
                 </button>
             )}
 
@@ -98,9 +98,9 @@ export default function ChatWidget() {
                     {/* Header */}
                     <div className="deedy-header">
                         <div className="deedy-header-left">
-                            <span className="deedy-avatar">🏠</span>
+                            <span className="deedy-avatar">AI</span>
                             <div>
-                                <div className="deedy-name">Deedy</div>
+                                <div className="deedy-name">DeedScan Assistant</div>
                                 <div className="deedy-status">
                                     {loading ? "Thinking…" : "Online"}
                                 </div>
@@ -119,11 +119,10 @@ export default function ChatWidget() {
                     <div className="deedy-body" ref={bodyRef}>
                         {messages.length === 0 && (
                             <div className="deedy-welcome">
-                                <span className="deedy-welcome-icon">🏠</span>
-                                <h3>Hey there! I&apos;m Deedy</h3>
+                                <span className="deedy-welcome-icon">🏘️</span>
+                                <h3>DeedScan Assistant</h3>
                                 <p>
-                                    Your DeedScan AI sidekick. Ask me about listings, prices,
-                                    confidence scores, or how to get started selling!
+                                    How can I help you with DeedScan listings, prices, or verification today?
                                 </p>
                                 <div className="deedy-suggestions">
                                     <button
