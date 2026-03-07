@@ -3854,6 +3854,41 @@ img {
 }
 
 /* ── Neighborhood Grid ── */
+.ld-neighborhood-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border-glass);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--text-secondary);
+  animation: shimmerBg 2s infinite ease-in-out;
+  margin-top: 16px;
+}
+
+.ld-ai-summary {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 16px 0;
+  padding: 16px 20px;
+  background: rgba(16, 185, 129, 0.05);
+  /* very subtle emerald */
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ld-ai-sparkle {
+  font-size: 1.25rem;
+  animation: floatBounce 3s infinite ease-in-out;
+}
+
 .ld-neighborhood-grid {
   display: flex;
   flex-direction: column;

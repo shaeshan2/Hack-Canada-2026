@@ -1,5 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../../../lib/prisma";
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({});
 
 export type NeighborhoodData = {
     scores: {
@@ -7,6 +10,7 @@ export type NeighborhoodData = {
         schools: number;
         walkability: number;
     };
+    aiSummary: string;
     pois: {
         id: string;
         type: "transit" | "school" | "grocery";
@@ -62,6 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!listing || listing.latitude == null || listing.longitude == null) {
             return res.status(200).json({
                 scores: { transit: 0, schools: 0, walkability: 0 },
+                aiSummary: "No neighborhood data available.",
                 pois: [],
             });
         }
@@ -158,12 +163,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ...groceryPoints.slice(0, MAX_OTHER)
         ].sort((a, b) => a.distKm - b.distKm);
 
+        const transitScore = calcScore(transitPoints);
+        const schoolScore = calcScore(schoolPoints);
+        const walkScore = calcScore(groceryPoints);
+
+        // Generate AI Summary
+        const prompt = `Write a single, crisp, enthusiastic 10-15 word sentence wrapping up the vibe of this neighborhood based on these scores (out of 100): Transit: ${transitScore}, Schools: ${schoolScore}, Walkability: ${walkScore}. Do not use formatting like bold or asterisks. Return strictly the sentence.`;
+
+        let aiSummary = "A well-connected neighborhood with great local amenities.";
+        try {
+            const aiRes = await ai.models.generateContent({
+                model: "gemini-3-flash-preview",
+                contents: prompt,
+            });
+            if (aiRes.text) {
+                aiSummary = aiRes.text.trim();
+            }
+        } catch (e) {
+            console.error("AI summary generation failed:", e);
+        }
+
         const data: NeighborhoodData = {
             scores: {
-                transit: calcScore(transitPoints),
-                schools: calcScore(schoolPoints),
-                walkability: calcScore(groceryPoints),
+                transit: transitScore,
+                schools: schoolScore,
+                walkability: walkScore,
             },
+            aiSummary,
             pois: allPois.map(({ distKm, ...rest }) => ({
                 ...rest,
                 distanceText: distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`

@@ -54,6 +54,7 @@ type PriceEstimateResult = { price_range: string; explanation: string } | null;
 export default function ListingDetailPage({ listing, user }: ListingDetailProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [neighborhood, setNeighborhood] = useState<NeighborhoodData | null>(null);
+  const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [estimateError, setEstimateError] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<PriceEstimateResult>(null);
@@ -91,10 +92,17 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
 
   useEffect(() => {
     if (!listing) return;
+    setIsLoadingNeighborhood(true);
     fetch(`/api/listings/${listing.id}/neighborhood`)
       .then((res) => res.json())
-      .then((data: NeighborhoodData) => setNeighborhood(data))
-      .catch((e) => console.error("Could not fetch neighborhood", e));
+      .then((data: NeighborhoodData) => {
+        setNeighborhood(data);
+        setIsLoadingNeighborhood(false);
+      })
+      .catch((e) => {
+        console.error("Could not fetch neighborhood", e);
+        setIsLoadingNeighborhood(false);
+      });
   }, [listing]);
 
   if (!listing) {
@@ -255,47 +263,62 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
             </div>
 
             {/* ── Neighborhood & Amenities ── */}
-            {listing.latitude != null && listing.longitude != null && neighborhood && (
+            {listing.latitude != null && listing.longitude != null && (
               <div className="ld-section">
                 <h2 className="ld-section-title">Neighborhood & Amenities</h2>
-                <div className="ld-neighborhood-grid">
-                  <div className="ld-neighborhood-scores">
-                    <div className="ld-score-item">
-                      <div className="ld-score-header">
-                        <span>Transit</span>
-                        <span>{neighborhood.scores.transit}/100</span>
-                      </div>
-                      <div className="ld-score-bar">
-                        <div className="ld-score-fill transit" style={{ width: `${neighborhood.scores.transit}%` }} />
-                      </div>
-                    </div>
-                    <div className="ld-score-item">
-                      <div className="ld-score-header">
-                        <span>Schools</span>
-                        <span>{neighborhood.scores.schools}/100</span>
-                      </div>
-                      <div className="ld-score-bar">
-                        <div className="ld-score-fill schools" style={{ width: `${neighborhood.scores.schools}%` }} />
-                      </div>
-                    </div>
-                    <div className="ld-score-item">
-                      <div className="ld-score-header">
-                        <span>Walkability</span>
-                        <span>{neighborhood.scores.walkability}/100</span>
-                      </div>
-                      <div className="ld-score-bar">
-                        <div className="ld-score-fill walk" style={{ width: `${neighborhood.scores.walkability}%` }} />
-                      </div>
-                    </div>
+
+                {isLoadingNeighborhood ? (
+                  <div className="ld-neighborhood-loading">
+                    <span className="ld-spinner">✨</span>
+                    <p>AI is analyzing the neighborhood, fetching transit and schools...</p>
                   </div>
-                  <div className="ld-neighborhood-map-container">
-                    <NeighborhoodMap
-                      listingLat={listing.latitude}
-                      listingLng={listing.longitude}
-                      pois={neighborhood.pois}
-                    />
-                  </div>
-                </div>
+                ) : neighborhood ? (
+                  <>
+                    <p className="ld-ai-summary">
+                      <span className="ld-ai-sparkle">✨</span> {neighborhood.aiSummary}
+                    </p>
+                    <div className="ld-neighborhood-grid">
+                      <div className="ld-neighborhood-scores">
+                        <div className="ld-score-item">
+                          <div className="ld-score-header">
+                            <span>Transit</span>
+                            <span>{neighborhood.scores.transit}/100</span>
+                          </div>
+                          <div className="ld-score-bar">
+                            <div className="ld-score-fill transit" style={{ width: `${neighborhood.scores.transit}%` }} />
+                          </div>
+                        </div>
+                        <div className="ld-score-item">
+                          <div className="ld-score-header">
+                            <span>Schools</span>
+                            <span>{neighborhood.scores.schools}/100</span>
+                          </div>
+                          <div className="ld-score-bar">
+                            <div className="ld-score-fill schools" style={{ width: `${neighborhood.scores.schools}%` }} />
+                          </div>
+                        </div>
+                        <div className="ld-score-item">
+                          <div className="ld-score-header">
+                            <span>Walkability</span>
+                            <span>{neighborhood.scores.walkability}/100</span>
+                          </div>
+                          <div className="ld-score-bar">
+                            <div className="ld-score-fill walk" style={{ width: `${neighborhood.scores.walkability}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="ld-neighborhood-map-container">
+                        <NeighborhoodMap
+                          listingLat={listing.latitude}
+                          listingLng={listing.longitude}
+                          pois={neighborhood.pois}
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p>Could not load neighborhood data.</p>
+                )}
               </div>
             )}
           </div>
