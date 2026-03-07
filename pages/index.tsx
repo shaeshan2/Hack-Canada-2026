@@ -99,6 +99,7 @@ export default function Home({ listings, user, role }: HomeProps) {
   const [scrolled, setScrolled] = useState(false);
   const [howTab, setHowTab] = useState<"buyer" | "seller">("buyer");
   const [homePrice, setHomePrice] = useState(800000);
+  const [showRoleModal, setShowRoleModal] = useState(false);
   const calcRef = useRef<HTMLDivElement>(null);
 
   const roleLabel =
@@ -112,6 +113,11 @@ export default function Home({ listings, user, role }: HomeProps) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = showRoleModal ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [showRoleModal]);
 
   const savings = Math.round(homePrice * COMMISSION_RATE);
   const steps = howTab === "buyer" ? BUYER_STEPS : SELLER_STEPS;
@@ -148,7 +154,7 @@ export default function Home({ listings, user, role }: HomeProps) {
               {!user ? (
                 <>
                   <a href="/api/auth/login" className="nav-btn nav-btn-ghost">Log In</a>
-                  <a href="/api/auth/signup-buyer" className="nav-btn nav-btn-primary">Get Started</a>
+                  <button className="nav-btn nav-btn-primary" onClick={() => setShowRoleModal(true)}>Get Started</button>
                 </>
               ) : (
                 <>
@@ -481,6 +487,35 @@ export default function Home({ listings, user, role }: HomeProps) {
           </div>
         </footer>
       </div>
+
+      {/* ── Role Selection Modal ───────────────── */}
+      {showRoleModal && (
+        <div className="role-modal-overlay" onClick={() => setShowRoleModal(false)}>
+          <div className="role-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="role-modal-close" onClick={() => setShowRoleModal(false)} aria-label="Close">
+              ✕
+            </button>
+            <div className="role-modal-header">
+              <h2>How will you use DeedScan?</h2>
+              <p>Choose your role to get started — you can always explore both later.</p>
+            </div>
+            <div className="role-cards">
+              <a href="/api/auth/signup-buyer" className="role-card">
+                <div className="role-card-icon">🏡</div>
+                <h3>I&apos;m a Buyer</h3>
+                <p>Browse listings, message sellers directly, and find your next home commission-free.</p>
+                <span className="role-card-arrow">Get started →</span>
+              </a>
+              <a href="/api/auth/signup-seller" className="role-card">
+                <div className="role-card-icon">📣</div>
+                <h3>I&apos;m a Seller</h3>
+                <p>List your property, get a QR yard sign, and keep 100% of your sale — zero commission.</p>
+                <span className="role-card-arrow">Get started →</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -508,7 +543,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({ req, r
       orderBy: { createdAt: "desc" },
     });
 
-    listings = raw.map((l) => ({
+    listings = raw.map((l: typeof raw[number]) => ({
       id: l.id,
       title: l.title,
       description: l.description,
