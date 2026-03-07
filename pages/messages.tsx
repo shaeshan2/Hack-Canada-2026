@@ -13,6 +13,27 @@ import {
 import { useSocketOptional } from "../contexts/SocketContext";
 import type { ChatMessage } from "../contexts/SocketContext";
 
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60_000) return "just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h`;
+  return new Date(iso).toLocaleDateString("en-CA", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function dateSeparatorLabel(iso: string): string {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return d.toLocaleDateString("en-CA", { month: "long", day: "numeric" });
+}
+
 type ConversationItem = {
   listingId: string;
   listing: { id: string; title: string; address: string };
@@ -23,9 +44,13 @@ type ConversationItem = {
 
 type MessagesPageProps = {
   user: { name?: string; email?: string } | null;
+  userId: string | null;
 };
 
-export default function MessagesPage({ user }: MessagesPageProps) {
+export default function MessagesPage({
+  user,
+  userId: propUserId,
+}: MessagesPageProps) {
   const router = useRouter();
   const { listingId, otherUserId } = router.query as {
     listingId?: string;
@@ -201,6 +226,11 @@ export default function MessagesPage({ user }: MessagesPageProps) {
     [handleSend],
   );
 
+  const activeConv = conversations.find(
+    (x) => x.listingId === listingId && x.otherUser.id === otherUserId,
+  );
+  const myUserId = socket?.userId ?? propUserId;
+
   if (!user) {
     return (
       <main className="messages-auth-prompt">
@@ -235,24 +265,41 @@ export default function MessagesPage({ user }: MessagesPageProps) {
                 {conversations.length === 0 && !listingId && (
                   <p>No conversations yet.</p>
                 )}
-                {conversations.map((c) => (
-                  <Link
-                    key={`${c.listingId}-${c.otherUser.id}`}
-                    href={`/messages?listingId=${c.listingId}&otherUserId=${c.otherUser.id}`}
-                    className={`conversation-item ${listingId === c.listingId && otherUserId === c.otherUser.id ? "active" : ""}`}
-                  >
-                    <strong>{c.listing.title}</strong>
-                    <span>{c.otherUser.name ?? "Seller"}</span>
-                    {c.lastMessage && (
-                      <span className="preview">
-                        {c.lastMessage.content.slice(0, 50)}…
-                      </span>
-                    )}
-                    {c.unreadCount > 0 && (
-                      <span className="unread">{c.unreadCount}</span>
-                    )}
-                  </Link>
-                ))}
+                {conversations.map((c) => {
+                  const initial = (c.otherUser.name?.[0] ?? "?").toUpperCase();
+                  return (
+                    <Link
+                      key={`${c.listingId}-${c.otherUser.id}`}
+                      href={`/messages?listingId=${c.listingId}&otherUserId=${c.otherUser.id}`}
+                      className={`conversation-item ${listingId === c.listingId && otherUserId === c.otherUser.id ? "active" : ""}`}
+                    >
+                      <div className="conv-avatar">{initial}</div>
+                      <div className="conv-body">
+                        <div className="conv-top">
+                          <span className="conv-name">
+                            {c.otherUser.name ?? "User"}
+                          </span>
+                          {c.lastMessage && (
+                            <span className="conv-time">
+                              {relativeTime(c.lastMessage.createdAt)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="conv-listing">{c.listing.title}</span>
+                        {c.lastMessage && (
+                          <span className="conv-preview">
+                            {c.lastMessage.content.length > 45
+                              ? c.lastMessage.content.slice(0, 45) + "…"
+                              : c.lastMessage.content}
+                          </span>
+                        )}
+                      </div>
+                      {c.unreadCount > 0 && (
+                        <span className="unread">{c.unreadCount}</span>
+                      )}
+                    </Link>
+                  );
+                })}
               </>
             )}
           </aside>
@@ -262,31 +309,59 @@ export default function MessagesPage({ user }: MessagesPageProps) {
               <div className="placeholder">
                 <p className="placeholder-title">No chat selected</p>
                 <p className="placeholder-copy">
-                  Select a conversation, or <Link href="/">browse listings</Link>{" "}
-                  and tap &quot;Message seller&quot; to start one.
+                  Select a conversation, or{" "}
+                  <Link href="/">browse listings</Link> and tap &quot;Message
+                  seller&quot; to start one.
                 </p>
               </div>
             ) : (
               <>
                 <div className="chat-header">
-                  <Link href="/messages">← Back</Link>
-                  <span>{listingTitle ?? "Chat"}</span>
+                  <Link href="/messages" className="chat-back">
+                    ←
+                  </Link>
+                  <div className="chat-header-avatar">
+                    {(activeConv?.otherUser.name?.[0] ?? "?").toUpperCase()}
+                  </div>
+                  <div className="chat-header-info">
+                    <div className="chat-header-name">
+                      {activeConv?.otherUser.name ?? "User"}
+                    </div>
+                    {listingTitle && (
+                      <div className="chat-header-listing">{listingTitle}</div>
+                    )}
+                  </div>
                 </div>
                 <div className="chat-messages">
-                  {messages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={`message ${m.senderId === socket?.userId ? "sent" : "received"}`}
-                    >
-                      <span className="message-content">{m.content}</span>
-                      <span className="message-meta">
-                        {new Date(m.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                  ))}
+                  {messages.reduce((acc, m, i) => {
+                    const prevDay =
+                      i > 0
+                        ? new Date(messages[i - 1].createdAt).toDateString()
+                        : null;
+                    const currDay = new Date(m.createdAt).toDateString();
+                    if (currDay !== prevDay) {
+                      acc.push(
+                        <div key={`sep-${m.id}`} className="date-separator">
+                          <span>{dateSeparatorLabel(m.createdAt)}</span>
+                        </div>,
+                      );
+                    }
+                    acc.push(
+                      <div
+                        key={m.id}
+                        className={`message ${m.senderId === myUserId ? "sent" : "received"}`}
+                      >
+                        <span className="message-content">{m.content}</span>
+                        <span className="message-meta">
+                          {new Date(m.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>,
+                    );
+                    return acc;
+                  }, [] as JSX.Element[])}
                   {typingName && (
                     <div className="message received typing">
                       <span className="message-content">
@@ -315,8 +390,21 @@ export default function MessagesPage({ user }: MessagesPageProps) {
                     type="button"
                     onClick={handleSend}
                     disabled={sending || !input.trim()}
+                    aria-label="Send message"
                   >
-                    Send
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="22" y1="2" x2="11" y2="13" />
+                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
                   </button>
                 </div>
                 {!socket?.connected && (
@@ -339,11 +427,13 @@ export const getServerSideProps: GetServerSideProps<
 > = async ({ req, res }) => {
   const session = await auth0.getSession(req);
   let user: MessagesPageProps["user"] = null;
+  let userId: string | null = null;
   if (session?.user) {
     const signupRole = getSignupIntentRole(req);
-    await ensureDbUser(session.user, signupRole);
+    const dbUser = await ensureDbUser(session.user, signupRole);
     clearSignupIntentCookie(res);
     user = { name: session.user.name, email: session.user.email };
+    userId = dbUser.id;
   }
-  return { props: { user } };
+  return { props: { user, userId } };
 };
