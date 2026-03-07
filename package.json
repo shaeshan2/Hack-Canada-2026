@@ -13,7 +13,8 @@
     "prisma:migrate": "prisma migrate dev",
     "seed:demo": "prisma db execute --file scripts/seed-demo.sql",
     "promote:admin": "node scripts/promote.js admin",
-    "promote:seller": "node scripts/promote.js seller"
+    "promote:seller": "node scripts/promote.js seller",
+    "test:auth": "node scripts/test-auth.js"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^4.16.0",

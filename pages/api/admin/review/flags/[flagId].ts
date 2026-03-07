@@ -4,8 +4,12 @@ import { BlockedReason, FraudFlagStatus } from "@prisma/client";
 import { auth0 } from "../../../../../lib/auth0";
 import { prisma } from "../../../../../lib/prisma";
 import { requireAdminUser } from "../../../../../lib/admin-guard";
+import { blockAuth0User } from "../../../../../lib/auth0-management";
 
-export default auth0.withApiAuthRequired(async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default auth0.withApiAuthRequired(async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     res.status(405).json({ error: "Method not allowed" });
@@ -28,10 +32,10 @@ export default auth0.withApiAuthRequired(async function handler(req: NextApiRequ
     include: {
       listing: {
         include: {
-          seller: true
-        }
-      }
-    }
+          seller: true,
+        },
+      },
+    },
   });
 
   if (!flag) {
@@ -45,11 +49,14 @@ export default auth0.withApiAuthRequired(async function handler(req: NextApiRequ
     const updatedFlag = await tx.fraudFlag.update({
       where: { id: flag.id },
       data: {
-        status: decision === "approve" ? FraudFlagStatus.APPROVED : FraudFlagStatus.BANNED,
+        status:
+          decision === "approve"
+            ? FraudFlagStatus.APPROVED
+            : FraudFlagStatus.BANNED,
         notes: notes ? String(notes) : null,
         reviewedAt,
-        reviewedById: adminUser.id
-      }
+        reviewedById: adminUser.id,
+      },
     });
 
     let seller = flag.listing.seller;
@@ -57,13 +64,29 @@ export default auth0.withApiAuthRequired(async function handler(req: NextApiRequ
       seller = await tx.user.update({
         where: { id: flag.listing.sellerId },
         data: {
-          blockedReason: BlockedReason.FRAUD
-        }
+          blockedReason: BlockedReason.FRAUD,
+        },
       });
     }
 
     return { updatedFlag, seller };
   });
 
-  res.status(200).json({ flag: result.updatedFlag, seller: result.seller });
+  let auth0BlockStatus: { applied?: boolean; reason?: string } = {};
+  if (decision === "ban") {
+    try {
+      auth0BlockStatus = await blockAuth0User(result.seller.auth0Id);
+    } catch (error) {
+      auth0BlockStatus = { reason: (error as Error).message };
+      console.warn("[flags] Auth0 block failed:", error);
+    }
+  }
+
+  res
+    .status(200)
+    .json({
+      flag: result.updatedFlag,
+      seller: result.seller,
+      auth0BlockStatus,
+    });
 });

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { validatePassword } from "../../../lib/password-validation";
+import { assignAuth0RoleToUser } from "../../../lib/auth0-management";
 
 const AUTH0_CONNECTION =
   process.env.AUTH0_SIGNUP_CONNECTION || "Username-Password-Authentication";
@@ -65,6 +66,7 @@ export default async function handler(
     code?: string;
     description?: string;
     error?: string;
+    _id?: string;
   };
 
   if (!authRes.ok) {
@@ -86,6 +88,15 @@ export default async function handler(
     }
     res.status(400).json({ error: msg });
     return;
+  }
+
+  if (data._id) {
+    // Map signup intent to the correct Auth0 role name
+    // intent cookie uses "seller" but the Auth0 role is "seller_pending"
+    const auth0Role = intent === "seller" ? "seller_pending" : intent;
+    assignAuth0RoleToUser(`auth0|${data._id}`, auth0Role).catch((err) =>
+      console.warn("[register] Auth0 role assignment failed:", err),
+    );
   }
 
   res.setHeader(

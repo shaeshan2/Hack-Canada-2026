@@ -8,7 +8,9 @@ function asStringArray(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === "string");
 }
 
-export function getAuth0Roles(user: SessionLikeUser | undefined | null): string[] {
+export function getAuth0Roles(
+  user: SessionLikeUser | undefined | null,
+): string[] {
   if (!user) return [];
 
   const appMetadataRoles =
@@ -16,18 +18,21 @@ export function getAuth0Roles(user: SessionLikeUser | undefined | null): string[
       ? asStringArray((user.app_metadata as Record<string, unknown>).roles)
       : [];
 
+  const auth0Domain = process.env.AUTH0_DOMAIN ?? "";
   const namespacedCandidates = [
-    user["https://deedscan.us.auth0.com/roles"],
-    user["https://deedscan.us/roles"],
-    user["https://deedscan.com/roles"],
+    user[`https://${auth0Domain}/roles`],
     user.roles,
-    appMetadataRoles
+    appMetadataRoles,
   ];
 
-  const merged = namespacedCandidates.flatMap((candidate) => asStringArray(candidate));
+  const merged = namespacedCandidates.flatMap((candidate) =>
+    asStringArray(candidate),
+  );
   return [...new Set(merged.map((role) => role.toLowerCase()))];
 }
 
-export function hasAuth0AdminRole(user: SessionLikeUser | undefined | null): boolean {
+export function hasAuth0AdminRole(
+  user: SessionLikeUser | undefined | null,
+): boolean {
   return getAuth0Roles(user).includes("admin");
 }
