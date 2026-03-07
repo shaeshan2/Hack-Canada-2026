@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "server:ws": "node server/ws-server.js",
+    "dev:all": "node scripts/run-all.js",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
@@ -14,12 +16,16 @@
     "@auth0/nextjs-auth0": "^3.5.0",
     "@prisma/adapter-better-sqlite3": "^7.4.2",
     "@prisma/client": "^7.4.2",
+    "jose": "^5.9.6",
     "next": "^14.2.5",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/node": "^20.16.5",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^18.3.5",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.5",

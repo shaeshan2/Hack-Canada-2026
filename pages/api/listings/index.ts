@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return;
       }
 
-      const { title, description, address, price, imageUrl } = protectedReq.body ?? {};
+      const { title, description, address, price, imageUrl, sqft, bedrooms, latitude, longitude } = protectedReq.body ?? {};
       if (!title || !description || !address || Number(price) <= 0) {
         protectedRes.status(400).json({ error: "Missing or invalid listing fields" });
         return;
@@ -53,6 +53,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           address: String(address),
           price: Number(price),
           imageUrl: imageUrl ? String(imageUrl) : null,
+          sqft: sqft != null ? Number(sqft) : null,
+          bedrooms: bedrooms != null ? Number(bedrooms) : null,
+          latitude: latitude != null ? Number(latitude) : null,
+          longitude: longitude != null ? Number(longitude) : null,
           sellerId: dbUser.id
         }
       });

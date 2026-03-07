@@ -5,6 +5,7 @@ import { Role } from "@prisma/client";
 import { ensureDbUser } from "../lib/session-user";
 
 type SellerProps = {
+  user?: { name?: string };
   userName?: string;
 };
 

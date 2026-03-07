@@ -18,6 +18,8 @@ model User {
   name      String?
   role      Role      @default(BUYER)
   listings  Listing[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -28,9 +30,28 @@ model Listing {
   description String
   address     String
   price       Int
-  imageUrl    String?
-  sellerId    String
-  seller      User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  imageUrl        String?
+  sqft            Int?
+  bedrooms        Int?
+  latitude        Float?
+  longitude       Float?
+  confidenceScore Int?     // 0-100; null = not yet run
+  sellerId        String
+  seller          User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  messages        Message[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  content     String
+  read        Boolean  @default(false)
+  senderId    String
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User     @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  listingId   String
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
