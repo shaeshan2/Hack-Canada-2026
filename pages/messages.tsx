@@ -1,5 +1,6 @@
 import { GetServerSideProps } from "next";
 import Link from "next/link";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "../lib/auth0-env";
@@ -72,7 +73,7 @@ export default function MessagesPage({ user }: MessagesPageProps) {
       fetch(`/api/listings/${listingId}`, { credentials: "include" })
         .then((res) => (res.ok ? res.json() : null))
         .then((l: { title?: string } | null) => l && setListingTitle(l.title ?? null))
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [listingId, otherUserId, conversations]);
 
@@ -96,7 +97,7 @@ export default function MessagesPage({ user }: MessagesPageProps) {
       fetch("/api/conversations", { credentials: "include" })
         .then((res) => (res.ok ? res.json() : []))
         .then(setConversations)
-        .catch(() => {});
+        .catch(() => { });
     });
     return unsub;
   }, [socket, listingId, otherUserId]);
@@ -141,7 +142,7 @@ export default function MessagesPage({ user }: MessagesPageProps) {
           if (msg.id) setMessages((prev) => [...prev, { ...msg, createdAt: msg.createdAt ?? new Date().toISOString() }]);
           setInput("");
         })
-        .catch(() => {})
+        .catch(() => { })
         .finally(() => setSending(false));
     }
   }, [input, listingId, otherUserId, socket]);
@@ -158,96 +159,101 @@ export default function MessagesPage({ user }: MessagesPageProps) {
 
   if (!user) {
     return (
-      <main className="container">
+      <main className="messages-auth-prompt">
         <p>Log in to view messages.</p>
         <a href="/api/auth/login">Log in</a>
-        <br />
         <Link href="/">Back to DeedScan</Link>
       </main>
     );
   }
 
   return (
-    <main className="container messages-page">
-      <header className="hero">
-        <Link href="/">← DeedScan</Link>
-        <h1>Messages</h1>
-      </header>
+    <>
+      <Head>
+        <title>Messages — DeedScan</title>
+        <meta name="description" content="Chat directly with buyers and sellers on DeedScan." />
+      </Head>
+      <main className="messages-page">
+        <header className="messages-page-header">
+          <Link href="/">← DeedScan</Link>
+          <h1>Messages</h1>
+        </header>
 
-      <div className="messages-layout">
-        <aside className="conversations-list card">
-          {loading && !listingId ? (
-            <p>Loading…</p>
-          ) : (
-            <>
-              {conversations.length === 0 && !listingId && <p>No conversations yet.</p>}
-              {conversations.map((c) => (
-                <Link
-                  key={`${c.listingId}-${c.otherUser.id}`}
-                  href={`/messages?listingId=${c.listingId}&otherUserId=${c.otherUser.id}`}
-                  className={`conversation-item ${listingId === c.listingId && otherUserId === c.otherUser.id ? "active" : ""}`}
-                >
-                  <strong>{c.listing.title}</strong>
-                  <span>{c.otherUser.name ?? "Seller"}</span>
-                  {c.lastMessage && <span className="preview">{c.lastMessage.content.slice(0, 50)}…</span>}
-                  {c.unreadCount > 0 && <span className="unread">{c.unreadCount}</span>}
-                </Link>
-              ))}
-            </>
-          )}
-        </aside>
-
-        <section className="chat-panel card">
-          {!listingId ? (
-            <p className="placeholder">Select a conversation or <Link href="/">browse listings</Link> and tap &quot;Message seller&quot;.</p>
-          ) : (
-            <>
-              <div className="chat-header">
-                <Link href="/messages">← Back</Link>
-                <span>{listingTitle ?? "Chat"}</span>
-              </div>
-              <div className="chat-messages">
-                {messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`message ${m.senderId === socket?.userId ? "sent" : "received"}`}
+        <div className="messages-layout">
+          <aside className="conversations-list">
+            {loading && !listingId ? (
+              <p>Loading…</p>
+            ) : (
+              <>
+                {conversations.length === 0 && !listingId && <p>No conversations yet.</p>}
+                {conversations.map((c) => (
+                  <Link
+                    key={`${c.listingId}-${c.otherUser.id}`}
+                    href={`/messages?listingId=${c.listingId}&otherUserId=${c.otherUser.id}`}
+                    className={`conversation-item ${listingId === c.listingId && otherUserId === c.otherUser.id ? "active" : ""}`}
                   >
-                    <span className="message-content">{m.content}</span>
-                    <span className="message-meta">
-                      {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
+                    <strong>{c.listing.title}</strong>
+                    <span>{c.otherUser.name ?? "Seller"}</span>
+                    {c.lastMessage && <span className="preview">{c.lastMessage.content.slice(0, 50)}…</span>}
+                    {c.unreadCount > 0 && <span className="unread">{c.unreadCount}</span>}
+                  </Link>
                 ))}
-                {typingName && (
-                  <div className="message received typing">
-                    <span className="message-content">{typingName} is typing…</span>
-                  </div>
+              </>
+            )}
+          </aside>
+
+          <section className="chat-panel">
+            {!listingId ? (
+              <p className="placeholder">Select a conversation or <Link href="/">browse listings</Link> and tap &quot;Message seller&quot;.</p>
+            ) : (
+              <>
+                <div className="chat-header">
+                  <Link href="/messages">← Back</Link>
+                  <span>{listingTitle ?? "Chat"}</span>
+                </div>
+                <div className="chat-messages">
+                  {messages.map((m) => (
+                    <div
+                      key={m.id}
+                      className={`message ${m.senderId === socket?.userId ? "sent" : "received"}`}
+                    >
+                      <span className="message-content">{m.content}</span>
+                      <span className="message-meta">
+                        {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                  ))}
+                  {typingName && (
+                    <div className="message received typing">
+                      <span className="message-content">{typingName} is typing…</span>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className="chat-input">
+                  <input
+                    type="text"
+                    placeholder="Type a message…"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => socket?.sendTypingStart(listingId, otherUserId!)}
+                    onBlur={() => socket?.sendTypingStop(listingId, otherUserId!)}
+                    disabled={sending}
+                  />
+                  <button type="button" onClick={handleSend} disabled={sending || !input.trim()}>
+                    Send
+                  </button>
+                </div>
+                {!socket?.connected && (
+                  <p className="reconnect-hint">Sending via server. Connect to WebSocket for real-time delivery.</p>
                 )}
-                <div ref={messagesEndRef} />
-              </div>
-              <div className="chat-input">
-                <input
-                  type="text"
-                  placeholder="Type a message…"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onFocus={() => socket?.sendTypingStart(listingId, otherUserId!)}
-                  onBlur={() => socket?.sendTypingStop(listingId, otherUserId!)}
-                  disabled={sending}
-                />
-                <button type="button" onClick={handleSend} disabled={sending || !input.trim()}>
-                  Send
-                </button>
-              </div>
-              {!socket?.connected && (
-                <p className="reconnect-hint">Sending via server. Connect to WebSocket for real-time delivery.</p>
-              )}
-            </>
-          )}
-        </section>
-      </div>
-    </main>
+              </>
+            )}
+          </section>
+        </div>
+      </main>
+    </>
   );
 }
 
