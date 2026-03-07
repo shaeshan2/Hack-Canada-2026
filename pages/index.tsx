@@ -334,6 +334,83 @@ export default function Home({ listings, user, role }: HomePageProps) {
           </div>
         </section>
 
+        {/* ── Listings ────────────────────────────── */}
+        <section className="listings-section" id="listings">
+          <div className="section-inner">
+            <div className="section-header animate-in">
+              <div className="section-tag">📍 Live Listings</div>
+              <h2>Explore Properties</h2>
+              <p>
+                Browse verified, commission-free listings from real Canadian
+                homeowners.
+              </p>
+            </div>
+
+            {listings.length > 0 ? (
+              <div className="listings-grid">
+                {listings.map((listing, i) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    index={i}
+                    showMessageSeller={Boolean(user)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="empty-listings animate-in">
+                <p>No listings yet — be the first to list!</p>
+                <a
+                  href="/api/auth/signup-seller"
+                  className="btn btn-primary"
+                  style={{ marginTop: 16 }}
+                >
+                  List Your Property →
+                </a>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Why Choose DeedScan ─────────────────── */}
+        <section className="why-deedscan-section">
+          <div className="section-inner">
+            <div className="section-header animate-in">
+              <div className="section-tag">🛡️ Trust & Safety</div>
+              <h2>Why Choose DeedScan?</h2>
+              <p>
+                We built a marketplace that puts your security and wallet first.
+              </p>
+            </div>
+
+            <div className="why-grid">
+              <div className="why-card animate-in animate-in-delay-1">
+                <div className="why-card-icon">🏦</div>
+                <h3>Bank-Grade Verification</h3>
+                <p>
+                  Every seller undergoes strict government ID verification via Stripe Identity before they can list a property. No fake accounts.
+                </p>
+              </div>
+
+              <div className="why-card animate-in animate-in-delay-2">
+                <div className="why-card-icon">🤖</div>
+                <h3>AI Fraud Detection</h3>
+                <p>
+                  Our built-in AI scans every image and listing for stolen photos, unrealistic pricing, and perceptual hashes to eliminate scams before they go live.
+                </p>
+              </div>
+
+              <div className="why-card animate-in animate-in-delay-3">
+                <div className="why-card-icon">💸</div>
+                <h3>Zero Intermediaries</h3>
+                <p>
+                  We charge absolutely zero commission. You connect directly with verified buyers using our secure, encrypted chat. Keep 100% of your sale.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── How It Works ────────────────────────── */}
         <section className="how-section" id="how-it-works">
           <div className="section-inner">
@@ -435,45 +512,6 @@ export default function Home({ listings, user, role }: HomePageProps) {
             </div>
           </div>
         </section>
-
-        {/* ── Listings ────────────────────────────── */}
-        <section className="listings-section" id="listings">
-          <div className="section-inner">
-            <div className="section-header animate-in">
-              <div className="section-tag">📍 Live Listings</div>
-              <h2>Explore Properties</h2>
-              <p>
-                Browse verified, commission-free listings from real Canadian
-                homeowners.
-              </p>
-            </div>
-
-            {listings.length > 0 ? (
-              <div className="listings-grid">
-                {listings.map((listing, i) => (
-                  <ListingCard
-                    key={listing.id}
-                    listing={listing}
-                    index={i}
-                    showMessageSeller={Boolean(user)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="empty-listings animate-in">
-                <p>No listings yet — be the first to list!</p>
-                <a
-                  href="/api/auth/signup-seller"
-                  className="btn btn-primary"
-                  style={{ marginTop: 16 }}
-                >
-                  List Your Property →
-                </a>
-              </div>
-            )}
-          </div>
-        </section>
-
         {/* ── Footer CTA ─────────────────────────── */}
         {!user && <FooterCta />}
 
