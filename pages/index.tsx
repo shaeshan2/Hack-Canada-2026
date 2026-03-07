@@ -1,5 +1,6 @@
 import { GetServerSideProps } from "next";
 import { useMemo, useState } from "react";
+import "../lib/auth0-env";
 import { getSession } from "@auth0/nextjs-auth0";
 import { prisma } from "../lib/prisma";
 import { ensureDbUser } from "../lib/session-user";

@@ -1,3 +1,4 @@
+import "../lib/auth0-env";
 import { withPageAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import { GetServerSideProps } from "next";
 import { FormEvent, useState } from "react";

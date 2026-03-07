@@ -1,4 +1,5 @@
 import { Role } from "@prisma/client";
+import "../../../lib/auth0-env";
 import { withApiAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { ensureDbUser } from "../../../lib/session-user";
