@@ -99,6 +99,8 @@ model SellerVerificationSubmission {
   ownershipProofUrl  String
   status             VerificationStatus @default(PENDING)
   rejectionReason    String?
+  aiAnalysis         String?
+  aiConfidence       Int?
   submittedAt        DateTime           @default(now())
   reviewedAt         DateTime?
   reviewedById       String?

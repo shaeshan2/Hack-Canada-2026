@@ -5,6 +5,7 @@ import { auth0 } from "../../../lib/auth0";
 import { prisma } from "../../../lib/prisma";
 import { ensureDbUser } from "../../../lib/session-user";
 import { getSignupIntentRole } from "../../../lib/signup-intent";
+import { verifyDocuments } from "../../../lib/api/verify-documents";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   return auth0.withApiAuthRequired(async function protectedHandler(
@@ -51,23 +52,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const submission = existingPending
         ? await prisma.sellerVerificationSubmission.update({
-            where: { id: existingPending.id },
-            data: {
-              govIdDocumentUrl: String(govIdDocumentUrl),
-              ownershipProofUrl: String(ownershipProofUrl),
-              submittedAt: new Date(),
-              rejectionReason: null,
-              reviewedAt: null,
-              reviewedById: null
-            }
-          })
+          where: { id: existingPending.id },
+          data: {
+            govIdDocumentUrl: String(govIdDocumentUrl),
+            ownershipProofUrl: String(ownershipProofUrl),
+            submittedAt: new Date(),
+            rejectionReason: null,
+            aiAnalysis: null,
+            aiConfidence: null,
+            reviewedAt: null,
+            reviewedById: null
+          }
+        })
         : await prisma.sellerVerificationSubmission.create({
-            data: {
-              userId: dbUser.id,
-              govIdDocumentUrl: String(govIdDocumentUrl),
-              ownershipProofUrl: String(ownershipProofUrl)
-            }
-          });
+          data: {
+            userId: dbUser.id,
+            govIdDocumentUrl: String(govIdDocumentUrl),
+            ownershipProofUrl: String(ownershipProofUrl)
+          }
+        });
 
       if (dbUser.role !== Role.SELLER_PENDING) {
         await prisma.user.update({
@@ -76,7 +79,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      protectedRes.status(201).json(submission);
+      // ── Run Gemini AI document verification ──
+      const aiResult = await verifyDocuments(
+        String(govIdDocumentUrl),
+        String(ownershipProofUrl)
+      );
+
+      // Store AI analysis on the submission
+      const updatedSubmission = await prisma.sellerVerificationSubmission.update({
+        where: { id: submission.id },
+        data: {
+          aiAnalysis: aiResult.reason,
+          aiConfidence: aiResult.confidence,
+          // Auto-approve if AI is confident
+          ...(aiResult.approved && aiResult.confidence >= 80
+            ? {
+              status: VerificationStatus.APPROVED,
+              reviewedAt: new Date(),
+            }
+            : {}),
+        },
+      });
+
+      // If AI auto-approved, upgrade the user role
+      if (aiResult.approved && aiResult.confidence >= 80) {
+        await prisma.user.update({
+          where: { id: dbUser.id },
+          data: { role: Role.SELLER_VERIFIED },
+        });
+      }
+
+      protectedRes.status(201).json({
+        ...updatedSubmission,
+        aiVerification: {
+          approved: aiResult.approved,
+          confidence: aiResult.confidence,
+          reason: aiResult.reason,
+          extractedName: aiResult.extractedName,
+        },
+      });
       return;
     }
 

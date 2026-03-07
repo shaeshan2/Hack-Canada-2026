@@ -11,7 +11,12 @@ import { prisma } from "../../lib/prisma";
 type VerifyProps = {
   user?: { name?: string; email?: string };
   role?: string;
-  submission?: { status: string; rejectionReason?: string } | null;
+  submission?: {
+    status: string;
+    rejectionReason?: string;
+    aiAnalysis?: string;
+    aiConfidence?: number;
+  } | null;
 };
 
 export default function SellerVerifyPage({
@@ -79,8 +84,33 @@ export default function SellerVerifyPage({
       return;
     }
 
+    const result = (await verifyRes.json()) as {
+      aiVerification?: {
+        approved: boolean;
+        confidence: number;
+        reason: string;
+      };
+    };
+
+    if (result.aiVerification?.approved && result.aiVerification.confidence >= 80) {
+      // AI auto-approved — redirect to seller dashboard
+      setMessage(
+        `✅ AI Verified (${result.aiVerification.confidence}% confidence). Redirecting to your dashboard…`,
+      );
+      if (govIdRef.current) govIdRef.current.value = "";
+      if (ownershipRef.current) ownershipRef.current.value = "";
+      setLoading(false);
+      setTimeout(() => {
+        window.location.href = "/seller";
+      }, 2000);
+      return;
+    }
+
+    const aiNote = result.aiVerification
+      ? ` AI analysis (${result.aiVerification.confidence}% confidence): ${result.aiVerification.reason}`
+      : "";
     setMessage(
-      "Documents submitted successfully. An admin will review your verification shortly.",
+      `Documents submitted.${aiNote} An admin will review your verification shortly.`,
     );
     if (govIdRef.current) govIdRef.current.value = "";
     if (ownershipRef.current) ownershipRef.current.value = "";
@@ -224,7 +254,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const session = await auth0.getSession(context.req);
   let user: { name?: string; email?: string } | null = null;
   let role: string | null = null;
-  let submission: { status: string; rejectionReason?: string } | null = null;
+  let submission: { status: string; rejectionReason?: string; aiAnalysis?: string; aiConfidence?: number } | null = null;
 
   if (session?.user) {
     const signupRole = getSignupIntentRole(context.req);
@@ -241,6 +271,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         submission = {
           status: latest.status,
           rejectionReason: latest.rejectionReason ?? undefined,
+          aiAnalysis: latest.aiAnalysis ?? undefined,
+          aiConfidence: latest.aiConfidence ?? undefined,
         };
       }
     } catch (err) {
