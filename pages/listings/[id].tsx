@@ -2,7 +2,7 @@ import { GetServerSideProps } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import "../../lib/auth0-env";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "../../lib/auth0";
 import { ensureDbUser } from "../../lib/session-user";
 import { clearSignupIntentCookie, getSignupIntentRole } from "../../lib/signup-intent";
 import { prisma } from "../../lib/prisma";
@@ -116,7 +116,7 @@ export const getServerSideProps: GetServerSideProps<ListingDetailProps> = async 
   }
 
   let user: ListingDetailProps["user"] = null;
-  const session = await getSession(req, res);
+  const session = await auth0.getSession(req);
   if (session?.user) {
     const signupRole = getSignupIntentRole(req);
     await ensureDbUser(session.user, signupRole);

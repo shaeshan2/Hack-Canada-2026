@@ -4,7 +4,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "../lib/auth0-env";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "../lib/auth0";
 import { ensureDbUser } from "../lib/session-user";
 import { clearSignupIntentCookie, getSignupIntentRole } from "../lib/signup-intent";
 import { useSocketOptional } from "../contexts/SocketContext";
@@ -258,7 +258,7 @@ export default function MessagesPage({ user }: MessagesPageProps) {
 }
 
 export const getServerSideProps: GetServerSideProps<MessagesPageProps> = async ({ req, res }) => {
-  const session = await getSession(req, res);
+  const session = await auth0.getSession(req);
   let user: MessagesPageProps["user"] = null;
   if (session?.user) {
     const signupRole = getSignupIntentRole(req);

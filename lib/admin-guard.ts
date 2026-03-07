@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getSession } from "@auth0/nextjs-auth0";
 import { Role } from "@prisma/client";
+import { auth0 } from "./auth0";
 import { ensureDbUser } from "./session-user";
 import { getSignupIntentRole } from "./signup-intent";
 import { hasAuth0AdminRole } from "./auth0-roles";
 import { prisma } from "./prisma";
 
 export async function requireAdminUser(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getSession(req, res);
+  const session = await auth0.getSession(req);
   if (!session?.user) {
     res.status(401).json({ error: "Not authenticated" });
     return null;

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import "../../../lib/auth0-env";
-import { withApiAuthRequired, getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "../../../lib/auth0";
 import { prisma } from "../../../lib/prisma";
 import { ensureDbUser } from "../../../lib/session-user";
 import { getSignupIntentRole } from "../../../lib/signup-intent";
@@ -14,11 +14,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  return withApiAuthRequired(async function getMessages(
+  return auth0.withApiAuthRequired(async function getMessages(
     protectedReq: NextApiRequest,
     protectedRes: NextApiResponse
   ) {
-    const session = await getSession(protectedReq, protectedRes);
+    const session = await auth0.getSession(protectedReq);
     if (!session?.user) {
       sendError(protectedRes, "Not authenticated", "UNAUTHORIZED", 401);
       return;

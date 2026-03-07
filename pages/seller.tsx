@@ -1,7 +1,6 @@
 import "../lib/auth0-env";
-import { withPageAuthRequired, getSession } from "@auth0/nextjs-auth0";
-import { GetServerSideProps } from "next";
 import { FormEvent, useRef, useState } from "react";
+import { auth0 } from "../lib/auth0";
 import { ensureDbUser } from "../lib/session-user";
 import { clearSignupIntentCookie, getSignupIntentRole } from "../lib/signup-intent";
 
@@ -121,9 +120,9 @@ function SellerPage({ userName }: SellerProps) {
 
 export default SellerPage;
 
-export const getServerSideProps: GetServerSideProps<SellerProps> = withPageAuthRequired({
+export const getServerSideProps = auth0.withPageAuthRequired({
   async getServerSideProps({ req, res }) {
-    const session = await getSession(req, res);
+    const session = await auth0.getSession(req);
 
     if (!session?.user) {
       return { redirect: { destination: "/api/auth/login", permanent: false } };

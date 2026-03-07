@@ -1,11 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import "../../../../../lib/auth0-env";
-import { withApiAuthRequired } from "@auth0/nextjs-auth0";
 import { BlockedReason, FraudFlagStatus } from "@prisma/client";
+import { auth0 } from "../../../../../lib/auth0";
 import { prisma } from "../../../../../lib/prisma";
 import { requireAdminUser } from "../../../../../lib/admin-guard";
 
-export default withApiAuthRequired(async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default auth0.withApiAuthRequired(async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     res.status(405).json({ error: "Method not allowed" });

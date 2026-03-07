@@ -61,7 +61,7 @@ async function readPhotoBuffer(url: string): Promise<Buffer | null> {
 async function averageHash(buffer: Buffer): Promise<string | null> {
   try {
     const image = await Jimp.read(buffer);
-    image.resize({ w: 8, h: 8 }).grayscale();
+    image.resize(8, 8).grayscale();
 
     const luminances: number[] = [];
     for (let y = 0; y < 8; y += 1) {

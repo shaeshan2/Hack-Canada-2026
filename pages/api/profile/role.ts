@@ -1,19 +1,19 @@
 import { Role } from "@prisma/client";
 import "../../../lib/auth0-env";
-import { withApiAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { auth0 } from "../../../lib/auth0";
 import { ensureDbUser } from "../../../lib/session-user";
 import { prisma } from "../../../lib/prisma";
 import { getSignupIntentRole } from "../../../lib/signup-intent";
 
-export default withApiAuthRequired(async function setRole(req: NextApiRequest, res: NextApiResponse) {
+export default auth0.withApiAuthRequired(async function setRole(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
 
-  const session = await getSession(req, res);
+  const session = await auth0.getSession(req);
   if (!session?.user) {
     res.status(401).json({ error: "Not authenticated" });
     return;

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useMemo, useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import "../lib/auth0-env";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "../lib/auth0";
 import { prisma } from "../lib/prisma";
 import { ensureDbUser } from "../lib/session-user";
 import { clearSignupIntentCookie, getSignupIntentRole } from "../lib/signup-intent";
@@ -542,7 +542,7 @@ export default function Home({ listings, user, role }: HomeProps) {
 
 /* ── Server-Side Data ───────────────────────────────── */
 export const getServerSideProps: GetServerSideProps<HomeProps> = async ({ req, res }) => {
-  const session = await getSession(req, res);
+  const session = await auth0.getSession(req);
   let user: HomeProps["user"] = null;
   let role: HomeProps["role"] = null;
 

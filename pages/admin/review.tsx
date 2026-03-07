@@ -1,8 +1,8 @@
 import "../../lib/auth0-env";
-import { withPageAuthRequired, getSession } from "@auth0/nextjs-auth0";
 import dynamic from "next/dynamic";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { FraudFlagStatus, Role, VerificationStatus } from "@prisma/client";
+import { auth0 } from "../../lib/auth0";
 import { ensureDbUser } from "../../lib/session-user";
 import { getSignupIntentRole } from "../../lib/signup-intent";
 import { hasAuth0AdminRole } from "../../lib/auth0-roles";
@@ -272,9 +272,9 @@ function AdminReviewPage({ adminName }: Props) {
 
 export default AdminReviewPage;
 
-export const getServerSideProps = withPageAuthRequired({
+export const getServerSideProps = auth0.withPageAuthRequired({
   async getServerSideProps({ req, res }) {
-    const session = await getSession(req, res);
+    const session = await auth0.getSession(req);
     if (!session?.user) {
       return { redirect: { destination: "/api/auth/login", permanent: false } };
     }

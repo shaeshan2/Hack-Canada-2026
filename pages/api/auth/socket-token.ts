@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import "../../../lib/auth0-env";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "../../../lib/auth0";
 import { ensureDbUser } from "../../../lib/session-user";
 import { getSignupIntentRole } from "../../../lib/signup-intent";
 
@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  const session = await getSession(req, res);
+  const session = await auth0.getSession(req);
   if (!session?.user?.sub || !session?.user?.email) {
     res.status(401).json({ authenticated: false });
     return;
