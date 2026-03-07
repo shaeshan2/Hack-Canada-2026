@@ -3853,6 +3853,101 @@ img {
   font-size: 0.85rem;
 }
 
+/* ── Neighborhood Grid ── */
+.ld-neighborhood-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+@media (min-width: 768px) {
+  .ld-neighborhood-grid {
+    flex-direction: row;
+  }
+}
+
+.ld-neighborhood-scores {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-secondary);
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-glass);
+}
+
+.ld-score-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ld-score-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.ld-score-header span:last-child {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.ld-score-bar {
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ld-score-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease-out;
+}
+
+.ld-score-fill.transit {
+  background: #3b82f6;
+}
+
+.ld-score-fill.schools {
+  background: #f59e0b;
+}
+
+.ld-score-fill.walk {
+  background: #10b981;
+}
+
+.ld-neighborhood-map-container {
+  flex: 1.5;
+  height: 300px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-glass);
+}
+
+.ld-neighborhood-map,
+.ld-map-loading {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.ld-map-loading,
+.ld-map-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  height: 300px;
+}
+
 /* ── Right sticky card ── */
 .ld-price-card {
   background: var(--bg-secondary);
@@ -4088,9 +4183,12 @@ img {
 }
 
 @keyframes shimmerBg {
-  0%, 100% {
+
+  0%,
+  100% {
     background: rgba(255, 255, 255, 0.01);
   }
+
   50% {
     background: rgba(16, 185, 129, 0.04);
   }
@@ -4103,8 +4201,15 @@ img {
 }
 
 @keyframes floatBounce {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-10px) scale(1.1); }
+
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-10px) scale(1.1);
+  }
 }
 
 .buyer-ai-loading h3 {

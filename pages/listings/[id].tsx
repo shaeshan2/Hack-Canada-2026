@@ -1,7 +1,7 @@
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../../lib/auth0-env";
 import { auth0 } from "../../lib/auth0";
 import { ensureDbUser } from "../../lib/session-user";
@@ -10,6 +10,14 @@ import {
   getSignupIntentRole,
 } from "../../lib/signup-intent";
 import { prisma } from "../../lib/prisma";
+import dynamic from "next/dynamic";
+import type { NeighborhoodData } from "../api/listings/[id]/neighborhood";
+
+// Leaflet uses window, so must be dynamically imported
+const NeighborhoodMap = dynamic(() => import("../../components/NeighborhoodMap"), {
+  ssr: false,
+  loading: () => <div className="ld-map-loading">Loading Map...</div>,
+});
 
 type ListingDetailProps = {
   listing: {
@@ -22,6 +30,8 @@ type ListingDetailProps = {
     sqft: number | null;
     bedrooms: number | null;
     confidenceScore: number | null;
+    latitude: number | null;
+    longitude: number | null;
     seller: { id: string; name: string | null };
     photos: { id: string; url: string; order: number }[];
   } | null;
@@ -41,6 +51,15 @@ function confidenceInfo(score: number | null) {
 
 export default function ListingDetailPage({ listing, user }: ListingDetailProps) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [neighborhood, setNeighborhood] = useState<NeighborhoodData | null>(null);
+
+  useEffect(() => {
+    if (!listing) return;
+    fetch(`/api/listings/${listing.id}/neighborhood`)
+      .then((res) => res.json())
+      .then((data: NeighborhoodData) => setNeighborhood(data))
+      .catch((e) => console.error("Could not fetch neighborhood", e));
+  }, [listing]);
 
   if (!listing) {
     return (
@@ -198,6 +217,51 @@ export default function ListingDetailPage({ listing, user }: ListingDetailProps)
                 </div>
               </div>
             </div>
+
+            {/* ── Neighborhood & Amenities ── */}
+            {listing.latitude != null && listing.longitude != null && neighborhood && (
+              <div className="ld-section">
+                <h2 className="ld-section-title">Neighborhood & Amenities</h2>
+                <div className="ld-neighborhood-grid">
+                  <div className="ld-neighborhood-scores">
+                    <div className="ld-score-item">
+                      <div className="ld-score-header">
+                        <span>Transit</span>
+                        <span>{neighborhood.scores.transit}/100</span>
+                      </div>
+                      <div className="ld-score-bar">
+                        <div className="ld-score-fill transit" style={{ width: `${neighborhood.scores.transit}%` }} />
+                      </div>
+                    </div>
+                    <div className="ld-score-item">
+                      <div className="ld-score-header">
+                        <span>Schools</span>
+                        <span>{neighborhood.scores.schools}/100</span>
+                      </div>
+                      <div className="ld-score-bar">
+                        <div className="ld-score-fill schools" style={{ width: `${neighborhood.scores.schools}%` }} />
+                      </div>
+                    </div>
+                    <div className="ld-score-item">
+                      <div className="ld-score-header">
+                        <span>Walkability</span>
+                        <span>{neighborhood.scores.walkability}/100</span>
+                      </div>
+                      <div className="ld-score-bar">
+                        <div className="ld-score-fill walk" style={{ width: `${neighborhood.scores.walkability}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="ld-neighborhood-map-container">
+                    <NeighborhoodMap
+                      listingLat={listing.latitude}
+                      listingLng={listing.longitude}
+                      pois={neighborhood.pois}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Right (sticky card) ── */}
@@ -294,6 +358,8 @@ export const getServerSideProps: GetServerSideProps<
         sqft: listing.sqft,
         bedrooms: listing.bedrooms,
         confidenceScore: listing.confidenceScore,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
         seller: listing.seller,
         photos: listing.photos.map((p) => ({
           id: p.id,
