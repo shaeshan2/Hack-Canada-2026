@@ -315,20 +315,20 @@ export default function BrowsePage() {
       <main className="buyer-browse">
         <section className="section-inner buyer-browse-shell">
           <header className="buyer-browse-header animate-in">
-            <div>
-              <p className="hero-badge buyer-browse-badge">
-                <span className="badge-dot" />
-                Buyer Browse
-              </p>
-              <h1>Find a home without middlemen</h1>
-            </div>
-            <div className="buyer-browse-nav">
-              <Link href="/" className="btn btn-outline">
-                Home
+            <div className="buyer-browse-title-row">
+              <Link href="/" className="buyer-back-link" aria-label="Back to home">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M15 5L8 12L15 19"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </Link>
-              <Link href="/messages" className="btn btn-primary">
-                Chat
-              </Link>
+              <h1>Browse Homes</h1>
             </div>
           </header>
 
@@ -398,7 +398,7 @@ export default function BrowsePage() {
             </label>
             <button
               type="button"
-              className="btn btn-outline"
+              className="btn btn-outline buyer-apply-btn"
               onClick={() => (query.trim() ? void runSearch(query.trim()) : void loadAllListings())}
               disabled={loading}
             >
