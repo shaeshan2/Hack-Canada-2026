@@ -17,56 +17,30 @@ export type NeighborhoodData = {
     }[];
 };
 
-// Simple seeded PRNG to ensure the same listing gets the same POIs
-function jsf32(a: number, b: number, c: number, d: number) {
-    return function () {
-        a |= 0;
-        b |= 0;
-        c |= 0;
-        d |= 0;
-        const t = (a - ((b << 27) | (b >>> 5))) | 0;
-        a = b ^ ((c << 17) | (c >>> 15));
-        b = (c + d) | 0;
-        c = (d + t) | 0;
-        d = (a + t) | 0;
-        return (d >>> 0) / 4294967296;
-    };
-}
+type OverpassElement = {
+    type: string;
+    id: number;
+    lat?: number;
+    lon?: number;
+    center?: { lat: number; lon: number };
+    tags?: Record<string, string>;
+};
 
-// Generate points in a radius (approx degrees)
-function generatePois(lat: number, lng: number, rng: () => number, count: number, type: "transit" | "school" | "grocery", names: string[]) {
-    const pois = [];
-    const radiusDeg = 0.012; // ~1-2km
+type OverpassResponse = {
+    elements: OverpassElement[];
+};
 
-    for (let i = 0; i < count; i++) {
-        const r = radiusDeg * Math.sqrt(rng());
-        const theta = rng() * 2 * Math.PI;
-        const pLat = lat + r * Math.cos(theta);
-        const pLng = lng + (r * Math.sin(theta)) / Math.cos(lat * (Math.PI / 180));
-
-        // Approximate distance in km (Haversine simplified for small distances)
-        const dLat = (pLat - lat) * 111;
-        const dLng = (pLng - lng) * 111 * Math.cos(lat * (Math.PI / 180));
-        const distKm = Math.sqrt(dLat * dLat + dLng * dLng);
-
-        let distanceText = "";
-        if (distKm < 1) {
-            distanceText = Math.round(distKm * 1000) + "m";
-        } else {
-            distanceText = distKm.toFixed(1) + "km";
-        }
-
-        pois.push({
-            id: `${type}-${i}`,
-            type,
-            name: names[i % names.length],
-            lat: pLat,
-            lng: pLng,
-            distanceText,
-            distKm,
-        });
-    }
-    return pois;
+// Haversine distance in km
+function calcDistanceKM(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -86,7 +60,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
         if (!listing || listing.latitude == null || listing.longitude == null) {
-            // Return a default empty response if no coordinates are available
             return res.status(200).json({
                 scores: { transit: 0, schools: 0, walkability: 0 },
                 pois: [],
@@ -95,35 +68,95 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const { latitude: lat, longitude: lng } = listing;
 
-        // Use lat/lng as seed so results are deterministic per listing
-        const seedPart1 = Math.floor(Math.abs(lat) * 100000);
-        const seedPart2 = Math.floor(Math.abs(lng) * 100000);
-        const rng = jsf32(seedPart1, seedPart2, 0xdeadbeef, 0x12345678);
+        // Radius in meters (1.5km)
+        const RADIUS = 1500;
 
-        // Generate Transit
-        const transitNames = ["Bus Stop (Main St)", "Transit Station", "Bus Stop (Metro)", "Light Rail Station"];
-        const transitPoints = generatePois(lat, lng, rng, 2 + Math.floor(rng() * 4), "transit", transitNames);
+        // Build the Overpass QL query
+        // This looks for bus stops, platforms, schools, supermarkets, and convenience stores near the listing.
+        const query = `
+      [out:json][timeout:15];
+      (
+        node["highway"="bus_stop"](around:${RADIUS}, ${lat}, ${lng});
+        node["public_transport"="platform"](around:${RADIUS}, ${lat}, ${lng});
+        node["amenity"="school"](around:${RADIUS}, ${lat}, ${lng});
+        way["amenity"="school"](around:${RADIUS}, ${lat}, ${lng});
+        node["shop"="supermarket"](around:${RADIUS}, ${lat}, ${lng});
+        node["shop"="convenience"](around:${RADIUS}, ${lat}, ${lng});
+      );
+      out center;
+    `;
 
-        // Generate Schools
-        const schoolNames = ["Public Elementary School", "High School", "Catholic Secondary", "Academy"];
-        const schoolPoints = generatePois(lat, lng, rng, 1 + Math.floor(rng() * 3), "school", schoolNames);
+        // Fetch from Overpass public API
+        const overpassRes = await fetch("https://overpass-api.de/api/interpreter", {
+            method: "POST",
+            body: query,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        });
 
-        // Generate Groceries
-        const groceryNames = ["Supermarket", "Local Grocery store", "Fresh Market", "Convenience Store"];
-        const groceryPoints = generatePois(lat, lng, rng, 1 + Math.floor(rng() * 4), "grocery", groceryNames);
+        if (!overpassRes.ok) {
+            throw new Error("Overpass API error");
+        }
 
-        const allPois = [...transitPoints, ...schoolPoints, ...groceryPoints].sort((a, b) => a.distKm - b.distKm);
+        const overpassData = (await overpassRes.json()) as OverpassResponse;
+        const elements = overpassData.elements || [];
 
-        // Very naive scoring system based on proximity of generated points
-        const calcScore = (points: { distKm: number }[]) => {
-            if (points.length === 0) return 30 + Math.floor(rng() * 20); // fallback base score
+        const poisRaw = elements.map(el => {
+            const elLat = el.lat ?? el.center?.lat;
+            const elLng = el.lon ?? el.center?.lon;
+            if (!elLat || !elLng) return null;
+
+            let type: "transit" | "school" | "grocery" | null = null;
+            let name = el.tags?.name;
+
+            if (el.tags?.highway === "bus_stop" || el.tags?.public_transport === "platform") {
+                type = "transit";
+                name = name || "Transit Stop";
+            } else if (el.tags?.amenity === "school") {
+                type = "school";
+                name = name || "School";
+            } else if (el.tags?.shop === "supermarket" || el.tags?.shop === "convenience") {
+                type = "grocery";
+                name = name || "Grocery Store";
+            }
+
+            if (!type) return null;
+
+            const distKm = calcDistanceKM(lat, lng, elLat, elLng);
+
+            return {
+                id: `osm-${el.id}`,
+                type,
+                name: name as string,
+                lat: elLat,
+                lng: elLng,
+                distKm,
+            };
+        }).filter((x): x is NonNullable<typeof x> => x !== null);
+
+        // Group and sort by distance
+        const transitPoints = poisRaw.filter(p => p.type === "transit").sort((a, b) => a.distKm - b.distKm);
+        const schoolPoints = poisRaw.filter(p => p.type === "school").sort((a, b) => a.distKm - b.distKm);
+        const groceryPoints = poisRaw.filter(p => p.type === "grocery").sort((a, b) => a.distKm - b.distKm);
+
+        // Naive scoring based on real distances
+        const calcScore = (points: typeof poisRaw) => {
+            if (points.length === 0) return 0;
             const closest = points[0].distKm;
-            // If closest is 0km, score 99. If closest is > 2km, score drops.
+            // Closer is better. A pin exactly at 0km gives 100. At 1.5km gives 40.
             let score = 100 - (closest * 40);
-            // Add a small bonus for having many points
-            score += points.length * 2;
-            return Math.min(99, Math.max(20, Math.round(score)));
+            // Give bonus for density (number of nearby points)
+            score += Math.min(points.length * 2, 20);
+            return Math.min(99, Math.max(5, Math.round(score)));
         };
+
+        // Format all POIs for the frontend (Limit to closest ones to not overload the map)
+        const MAX_TRANSIT = 15;
+        const MAX_OTHER = 8;
+        const allPois = [
+            ...transitPoints.slice(0, MAX_TRANSIT),
+            ...schoolPoints.slice(0, MAX_OTHER),
+            ...groceryPoints.slice(0, MAX_OTHER)
+        ].sort((a, b) => a.distKm - b.distKm);
 
         const data: NeighborhoodData = {
             scores: {
@@ -131,7 +164,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 schools: calcScore(schoolPoints),
                 walkability: calcScore(groceryPoints),
             },
-            pois: allPois.map(({ distKm, ...rest }) => rest), // Remove distKm from output
+            pois: allPois.map(({ distKm, ...rest }) => ({
+                ...rest,
+                distanceText: distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`
+            })),
         };
 
         return res.status(200).json(data);
