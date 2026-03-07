@@ -1,0 +1,28 @@
+{
+  "name": "hack-canada-2026",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@auth0/nextjs-auth0": "^3.5.0",
+    "@prisma/client": "^5.19.1",
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.5",
+    "@types/react": "^18.3.5",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.5",
+    "prisma": "^5.19.1",
+    "typescript": "^5.6.2"
+  }
+}
