@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { nearbyQuerySchema, parseQuery } from "../../../lib/api/validation";
 import { sendError } from "../../../lib/api/errors";
@@ -35,29 +36,60 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
   const { lat, lng, radius_km, price_min, price_max, bedrooms } = parsed.data;
+  const radius = radius_km ?? 10;
 
-  const where: { price?: { gte?: number; lte?: number }; bedrooms?: number } = {};
-  if (price_min != null) where.price = { ...where.price, gte: price_min };
-  if (price_max != null) where.price = { ...where.price, lte: price_max };
-  if (bedrooms != null) where.bedrooms = bedrooms;
+  // Bounding box prefilter for Prisma/SQLite before exact Haversine filtering.
+  const latDelta = radius / 111;
+  const lngDelta = radius / (111 * Math.max(Math.cos((lat * Math.PI) / 180), 0.01));
+
+  const where: Prisma.ListingWhereInput = {
+    latitude: { not: null, gte: lat - latDelta, lte: lat + latDelta },
+    longitude: { not: null, gte: lng - lngDelta, lte: lng + lngDelta },
+  };
+  if (price_min != null || price_max != null) {
+    where.price = {
+      ...(price_min != null ? { gte: price_min } : {}),
+      ...(price_max != null ? { lte: price_max } : {}),
+    };
+  }
+  if (bedrooms != null) {
+    where.bedrooms = bedrooms;
+  }
 
   const listings = await prisma.listing.findMany({
-    where: Object.keys(where).length ? where : undefined,
+    where,
     include: {
-      seller: { select: { id: true, name: true } },
+      seller: { select: { id: true, name: true, email: true } },
       photos: { orderBy: { order: "asc" } },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  let result = listings;
-  if (lat != null && lng != null && !Number.isNaN(lat) && !Number.isNaN(lng)) {
-    const radius = radius_km ?? 10;
-    result = listings.filter((l) => {
-      if (l.latitude == null || l.longitude == null) return true;
-      return haversineKm(lat, lng, l.latitude, l.longitude) <= radius;
-    });
-  }
+  const result = listings
+    .map((listing) => {
+      const distanceKm = haversineKm(lat, lng, listing.latitude!, listing.longitude!);
+      return { listing, distanceKm };
+    })
+    .filter((item) => item.distanceKm <= radius)
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .map(({ listing, distanceKm }) => ({
+      id: listing.id,
+      title: listing.title,
+      description: listing.description,
+      address: listing.address,
+      price: listing.price,
+      bedrooms: listing.bedrooms,
+      sqft: listing.sqft,
+      latitude: listing.latitude,
+      longitude: listing.longitude,
+      imageUrl: listing.imageUrl,
+      confidenceScore: listing.confidenceScore,
+      distanceKm: Number(distanceKm.toFixed(3)),
+      createdAt: listing.createdAt.toISOString(),
+      updatedAt: listing.updatedAt.toISOString(),
+      seller: listing.seller,
+      photos: listing.photos,
+    }));
 
   res.status(200).json(result);
 }

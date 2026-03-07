@@ -36,8 +36,8 @@ export const listingIdParamSchema = z.object({
 });
 
 export const nearbyQuerySchema = z.object({
-  lat: z.coerce.number().optional(),
-  lng: z.coerce.number().optional(),
+  lat: z.coerce.number().min(-90).max(90),
+  lng: z.coerce.number().min(-180).max(180),
   radius_km: z.coerce.number().positive().optional().default(10),
   price_min: z.coerce.number().int().nonnegative().optional(),
   price_max: z.coerce.number().int().nonnegative().optional(),
