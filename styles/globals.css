@@ -4765,8 +4765,10 @@ img {
 }
 
 .deedy-fab-icon {
-  font-size: 1.3rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
 }
 
 .deedy-fab-label {
@@ -4849,7 +4851,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  color: white;
 }
 
 .deedy-name {
@@ -4907,8 +4909,15 @@ img {
 }
 
 .deedy-welcome-icon {
-  font-size: 2.8rem;
-  animation: float 3s ease-in-out infinite;
+  width: 56px;
+  height: 56px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
 }
 
 .deedy-welcome h3 {
@@ -4991,7 +5000,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  color: white;
   margin-top: 2px;
 }
 

@@ -1,5 +1,6 @@
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useState, useRef, useEffect, FormEvent, KeyboardEvent } from "react";
+import { Bot, MapPin, FileText, ShieldCheck, Home } from "lucide-react";
 
 type Message = {
     role: "user" | "model";
@@ -87,7 +88,7 @@ export default function ChatWidget() {
                     }}
                     aria-label="Chat with Deedy"
                 >
-                    <span className="deedy-fab-icon">🤖</span>
+                    <span className="deedy-fab-icon"><Bot size={20} strokeWidth={1.75} /></span>
                     <span className="deedy-fab-label">AI Assistant</span>
                 </button>
             )}
@@ -98,7 +99,7 @@ export default function ChatWidget() {
                     {/* Header */}
                     <div className="deedy-header">
                         <div className="deedy-header-left">
-                            <span className="deedy-avatar">AI</span>
+                            <span className="deedy-avatar"><Bot size={14} strokeWidth={2} /></span>
                             <div>
                                 <div className="deedy-name">DeedScan Assistant</div>
                                 <div className="deedy-status">
@@ -119,7 +120,7 @@ export default function ChatWidget() {
                     <div className="deedy-body" ref={bodyRef}>
                         {messages.length === 0 && (
                             <div className="deedy-welcome">
-                                <span className="deedy-welcome-icon">🏘️</span>
+                                <span className="deedy-welcome-icon"><Bot size={28} strokeWidth={1.5} /></span>
                                 <h3>DeedScan Assistant</h3>
                                 <p>
                                     How can I help you with DeedScan listings, prices, or verification today?
@@ -128,21 +129,21 @@ export default function ChatWidget() {
                                     <button
                                         onClick={() => void sendMessage("What listings are available?")}
                                     >
-                                        📍 Show listings
+                                        <MapPin size={13} /> Show listings
                                     </button>
                                     <button
                                         onClick={() =>
                                             void sendMessage("What documents do I need to sell a property?")
                                         }
                                     >
-                                        📄 Docs needed
+                                        <FileText size={13} /> Docs needed
                                     </button>
                                     <button
                                         onClick={() =>
                                             void sendMessage("How do confidence scores work?")
                                         }
                                     >
-                                        🛡️ Confidence scores
+                                        <ShieldCheck size={13} /> Confidence scores
                                     </button>
                                 </div>
                             </div>
@@ -154,7 +155,7 @@ export default function ChatWidget() {
                                 className={`deedy-msg ${msg.role === "user" ? "deedy-msg-user" : "deedy-msg-bot"}`}
                             >
                                 {msg.role === "model" && (
-                                    <span className="deedy-msg-avatar">🏠</span>
+                                    <span className="deedy-msg-avatar"><Home size={13} strokeWidth={2} /></span>
                                 )}
                                 <div className="deedy-msg-bubble">
                                     {msg.text.split("\n").map((line, j) => (
