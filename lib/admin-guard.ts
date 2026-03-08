@@ -26,9 +26,8 @@ export async function requireAdminUser(
   const signupRole = getSignupIntentRole(req);
   const dbUser = await ensureDbUser(session.user, signupRole);
   const auth0Admin = hasAuth0AdminRole(session.user as Record<string, unknown>);
-  const allowDbFallback = process.env.ALLOW_DB_ADMIN_FALLBACK === "true";
 
-  // Check admin:review scope from access token when a Resource Server audience is configured
+  // Require admin:review permission in the access token when AUTH0_AUDIENCE is set
   let hasAdminScope = true;
   if (process.env.AUTH0_AUDIENCE) {
     const accessToken = session.tokenSet?.accessToken;
@@ -47,17 +46,13 @@ export async function requireAdminUser(
     }
   }
 
-  // DB fallback (dev mode): DB-promoted admins bypass the scope check, matching
-  // the page-level getServerSideProps guard which also doesn't check hasAdminScope.
-  const isAdmin =
-    (auth0Admin && hasAdminScope) ||
-    (allowDbFallback && dbUser.role === Role.ADMIN);
-  if (!isAdmin) {
+  if (!auth0Admin || !hasAdminScope) {
     res.status(403).json({ error: "Admin role required" });
     return null;
   }
 
-  if (auth0Admin && dbUser.role !== Role.ADMIN) {
+  // Keep DB role in sync if Auth0 says admin but DB disagrees
+  if (dbUser.role !== Role.ADMIN) {
     return prisma.user.update({
       where: { id: dbUser.id },
       data: { role: Role.ADMIN },
