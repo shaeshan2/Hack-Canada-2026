@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useState } from "react";
 import type { ListingCardData } from "../types";
 
 type ListingCardProps = {
@@ -23,6 +24,7 @@ export default function ListingCard({
   index,
   showMessageSeller,
 }: ListingCardProps) {
+  const [imageError, setImageError] = useState(false);
   const badge = confidenceLabel(listing.confidenceScore);
   const isSellerVerified = listing.seller.role === "SELLER_VERIFIED";
 
@@ -30,11 +32,12 @@ export default function ListingCard({
     <article
       className={`listing-card animate-in animate-in-delay-${(index % 3) + 1}`}
     >
-      {listing.imageUrl ? (
+      {listing.imageUrl && !imageError ? (
         <img
           className="listing-card-image"
           src={listing.imageUrl}
           alt={listing.title}
+          onError={() => setImageError(true)}
         />
       ) : (
         <div className="listing-card-image-placeholder">🏠</div>
