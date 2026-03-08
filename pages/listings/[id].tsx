@@ -1,5 +1,6 @@
 import { GetServerSideProps } from "next";
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import "../../lib/auth0-env";
@@ -72,9 +73,15 @@ export default function ListingDetailPage({
   const [estimate, setEstimate] = useState<PriceEstimateResult>(null);
 
   // Local state for fraud check so we can poll and update it live
-  const [localConfidenceScore, setLocalConfidenceScore] = useState(listing?.confidenceScore ?? null);
-  const [localBreakdownJson, setLocalBreakdownJson] = useState(listing?.breakdownJson ?? null);
-  const [localFlagsJson, setLocalFlagsJson] = useState(listing?.flagsJson ?? null);
+  const [localConfidenceScore, setLocalConfidenceScore] = useState(
+    listing?.confidenceScore ?? null,
+  );
+  const [localBreakdownJson, setLocalBreakdownJson] = useState(
+    listing?.breakdownJson ?? null,
+  );
+  const [localFlagsJson, setLocalFlagsJson] = useState(
+    listing?.flagsJson ?? null,
+  );
 
   async function fetchPriceEstimate() {
     if (!listing) return;
@@ -196,7 +203,13 @@ export default function ListingDetailPage({
       {/* ── Navbar ── */}
       <nav className="ld-navbar">
         <Link href="/" className="ld-logo">
-          <span className="logo-icon">🏠</span>DeedScan
+          <Image
+            src="/images/deedscan-nobg.png"
+            alt="DeedScan logo"
+            width={32}
+            height={32}
+          />
+          DeedScan
         </Link>
         <div className="ld-nav-right">
           <Link href="/browse" className="ld-nav-link">
@@ -365,64 +378,64 @@ export default function ListingDetailPage({
                       };
                       return (
                         <>
-                    <p className="ld-ai-summary">
-                      <span className="ld-ai-sparkle">✨</span>{" "}
-                      {neighborhood.aiSummary ||
-                        "A well-connected neighborhood with useful amenities nearby."}
-                    </p>
-                    <div className="ld-neighborhood-grid">
-                      <div className="ld-neighborhood-scores">
-                        <div className="ld-score-item">
-                          <div className="ld-score-header">
-                            <span>Transit</span>
-                            <span>{scores.transit}/100</span>
+                          <p className="ld-ai-summary">
+                            <span className="ld-ai-sparkle">✨</span>{" "}
+                            {neighborhood.aiSummary ||
+                              "A well-connected neighborhood with useful amenities nearby."}
+                          </p>
+                          <div className="ld-neighborhood-grid">
+                            <div className="ld-neighborhood-scores">
+                              <div className="ld-score-item">
+                                <div className="ld-score-header">
+                                  <span>Transit</span>
+                                  <span>{scores.transit}/100</span>
+                                </div>
+                                <div className="ld-score-bar">
+                                  <div
+                                    className="ld-score-fill transit"
+                                    style={{
+                                      width: `${scores.transit}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="ld-score-item">
+                                <div className="ld-score-header">
+                                  <span>Schools</span>
+                                  <span>{scores.schools}/100</span>
+                                </div>
+                                <div className="ld-score-bar">
+                                  <div
+                                    className="ld-score-fill schools"
+                                    style={{
+                                      width: `${scores.schools}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="ld-score-item">
+                                <div className="ld-score-header">
+                                  <span>Walkability</span>
+                                  <span>{scores.walkability}/100</span>
+                                </div>
+                                <div className="ld-score-bar">
+                                  <div
+                                    className="ld-score-fill walk"
+                                    style={{
+                                      width: `${scores.walkability}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="ld-neighborhood-map-container">
+                              <NeighborhoodMap
+                                listingLat={listing.latitude}
+                                listingLng={listing.longitude}
+                                pois={neighborhood.pois ?? []}
+                              />
+                            </div>
                           </div>
-                          <div className="ld-score-bar">
-                            <div
-                              className="ld-score-fill transit"
-                              style={{
-                                width: `${scores.transit}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div className="ld-score-item">
-                          <div className="ld-score-header">
-                            <span>Schools</span>
-                            <span>{scores.schools}/100</span>
-                          </div>
-                          <div className="ld-score-bar">
-                            <div
-                              className="ld-score-fill schools"
-                              style={{
-                                width: `${scores.schools}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div className="ld-score-item">
-                          <div className="ld-score-header">
-                            <span>Walkability</span>
-                            <span>{scores.walkability}/100</span>
-                          </div>
-                          <div className="ld-score-bar">
-                            <div
-                              className="ld-score-fill walk"
-                              style={{
-                                width: `${scores.walkability}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="ld-neighborhood-map-container">
-                        <NeighborhoodMap
-                          listingLat={listing.latitude}
-                          listingLng={listing.longitude}
-                          pois={neighborhood.pois ?? []}
-                        />
-                      </div>
-                    </div>
                         </>
                       );
                     })()}
