@@ -1,0 +1,38 @@
+name: PR Validation - ClipKit Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: clipkit-pr-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Build & Validate
+    runs-on: macos-26
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Regenerate submission registry
+        run: bash scripts/generate-registry.sh
+
+      - name: Build iOS simulator target (no signing)
+        run: |
+          xcodebuild build \
+            -project ReactivChallengeKit/ReactivChallengeKit.xcodeproj \
+            -scheme ReactivChallengeKit \
+            -destination 'generic/platform=iOS Simulator' \
+            -quiet \
+            CODE_SIGNING_ALLOWED=NO
