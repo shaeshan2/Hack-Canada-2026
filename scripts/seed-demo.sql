@@ -108,38 +108,32 @@ INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "list
 INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
 SELECT 'demo_msg_test_001', 'Hi, could you share the strata fees for this listing?', 0, 'demo_seller_003', u.id, 'demo_listing_003', datetime('now', '-90 minutes')
 FROM "User" u
-WHERE u.email = 'test@test.com'
-LIMIT 1;
+WHERE u.email = 'test@test.com';
 
 INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
 SELECT 'demo_msg_test_002', 'Absolutely, fees are $412/month and include water.', 0, u.id, 'demo_seller_003', 'demo_listing_003', datetime('now', '-75 minutes')
 FROM "User" u
-WHERE u.email = 'test@test.com'
-LIMIT 1;
+WHERE u.email = 'test@test.com';
 
 INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
 SELECT 'demo_msg_test_003', 'Is this townhouse still available for private showing?', 0, u.id, 'demo_seller_005', 'demo_listing_015', datetime('now', '-70 minutes')
 FROM "User" u
-WHERE u.email = 'test@test.com'
-LIMIT 1;
+WHERE u.email = 'test@test.com';
 
 INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
 SELECT 'demo_msg_test_004', 'Yes, we have openings this Friday and Sunday.', 0, 'demo_seller_005', u.id, 'demo_listing_015', datetime('now', '-62 minutes')
 FROM "User" u
-WHERE u.email = 'test@test.com'
-LIMIT 1;
+WHERE u.email = 'test@test.com';
 
 INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
 SELECT 'demo_msg_test_005', 'Can you share recent strata minutes for this condo?', 1, u.id, 'demo_seller_002', 'demo_listing_002', datetime('now', '-55 minutes')
 FROM "User" u
-WHERE u.email = 'test@test.com'
-LIMIT 1;
+WHERE u.email = 'test@test.com';
 
 INSERT INTO "Message" ("id", "content", "read", "senderId", "recipientId", "listingId", "createdAt")
 SELECT 'demo_msg_test_006', 'Sure, I can send them after 6 PM today.', 0, 'demo_seller_002', u.id, 'demo_listing_002', datetime('now', '-49 minutes')
 FROM "User" u
-WHERE u.email = 'test@test.com'
-LIMIT 1;
+WHERE u.email = 'test@test.com';
 
 -- ─────────────────────────────────────────────────────────
 -- Fraud breakdown data for all demo listings
