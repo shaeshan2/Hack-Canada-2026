@@ -8,6 +8,23 @@ import FooterCta from "../components/FooterCta";
 import type { HomePageProps, ListingCardData } from "../types";
 import Image from "next/image";
 import {
+  ShieldCheck,
+  ScanSearch,
+  BadgeDollarSign,
+  Search,
+  MessageSquare,
+  Handshake,
+  BadgeCheck,
+  QrCode,
+  Banknote,
+  Users,
+  Brain,
+  Ban,
+  Zap,
+  Target,
+  Smartphone,
+} from "lucide-react";
+import {
   BUYER_STEPS,
   BUYER_VALUES,
   COMMISSION_RATE,
@@ -404,7 +421,9 @@ export default function Home({ listings, user, role }: HomePageProps) {
 
             <div className="why-grid">
               <div className="why-card animate-in animate-in-delay-1">
-                <span className="why-card-num">01</span>
+                <span className="why-card-icon">
+                  <ShieldCheck size={22} />
+                </span>
                 <h3>Identity-Verified Sellers</h3>
                 <p>
                   Every seller undergoes strict government ID verification via
@@ -414,7 +433,9 @@ export default function Home({ listings, user, role }: HomePageProps) {
               </div>
 
               <div className="why-card animate-in animate-in-delay-2">
-                <span className="why-card-num">02</span>
+                <span className="why-card-icon">
+                  <ScanSearch size={22} />
+                </span>
                 <h3>AI Fraud Detection</h3>
                 <p>
                   Our built-in AI scans every image and listing for stolen
@@ -424,7 +445,9 @@ export default function Home({ listings, user, role }: HomePageProps) {
               </div>
 
               <div className="why-card animate-in animate-in-delay-3">
-                <span className="why-card-num">03</span>
+                <span className="why-card-icon">
+                  <BadgeDollarSign size={22} />
+                </span>
                 <h3>Zero Commission</h3>
                 <p>
                   We charge absolutely zero commission. You connect directly
@@ -469,7 +492,19 @@ export default function Home({ listings, user, role }: HomePageProps) {
                   key={`${howTab}-${i}`}
                   className={`step-card animate-in animate-in-delay-${i + 1}`}
                 >
-                  <div className="step-number">{i + 1}</div>
+                  <div className="step-number">
+                    {howTab === "buyer"
+                      ? [
+                          <Search size={20} />,
+                          <MessageSquare size={20} />,
+                          <Handshake size={20} />,
+                        ][i]
+                      : [
+                          <BadgeCheck size={20} />,
+                          <QrCode size={20} />,
+                          <Banknote size={20} />,
+                        ][i]}
+                  </div>
                   <h3>{step.title}</h3>
                   <p>{step.desc}</p>
                 </div>
@@ -490,20 +525,26 @@ export default function Home({ listings, user, role }: HomePageProps) {
               </p>
             </div>
             <div className="value-grid">
-              {BUYER_VALUES.map((v, i) => (
-                <div
-                  key={i}
-                  className={`value-card animate-in animate-in-delay-${i + 1}`}
-                >
-                  <span className="value-card-num">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <h3>{v.title}</h3>
-                    <p>{v.desc}</p>
+              {BUYER_VALUES.map((v, i) => {
+                const buyerIcons = [
+                  <Users size={18} />,
+                  <Brain size={18} />,
+                  <Ban size={18} />,
+                  <Zap size={18} />,
+                ];
+                return (
+                  <div
+                    key={i}
+                    className={`value-card animate-in animate-in-delay-${i + 1}`}
+                  >
+                    <span className="value-card-icon">{buyerIcons[i]}</span>
+                    <div>
+                      <h3>{v.title}</h3>
+                      <p>{v.desc}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
@@ -523,20 +564,26 @@ export default function Home({ listings, user, role }: HomePageProps) {
               </p>
             </div>
             <div className="value-grid">
-              {SELLER_VALUES.map((v, i) => (
-                <div
-                  key={i}
-                  className={`value-card animate-in animate-in-delay-${i + 1}`}
-                >
-                  <span className="value-card-num">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <h3>{v.title}</h3>
-                    <p>{v.desc}</p>
+              {SELLER_VALUES.map((v, i) => {
+                const sellerIcons = [
+                  <Banknote size={18} />,
+                  <Smartphone size={18} />,
+                  <ShieldCheck size={18} />,
+                  <Target size={18} />,
+                ];
+                return (
+                  <div
+                    key={i}
+                    className={`value-card animate-in animate-in-delay-${i + 1}`}
+                  >
+                    <span className="value-card-icon">{sellerIcons[i]}</span>
+                    <div>
+                      <h3>{v.title}</h3>
+                      <p>{v.desc}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>

@@ -1088,14 +1088,23 @@ img {
   border-top-color: var(--accent);
 }
 
-.why-card-num {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+.why-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--accent);
   margin-bottom: 20px;
-  text-transform: uppercase;
+  flex-shrink: 0;
+  transition: background 150ms ease;
+}
+
+.why-card:hover .why-card-icon {
+  background: rgba(16, 185, 129, 0.14);
 }
 
 .why-card h3 {
@@ -1195,13 +1204,16 @@ img {
 }
 
 .step-number {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 2rem;
-  font-weight: 700;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--accent);
   margin: 0 auto 20px;
-  line-height: 1;
-  display: block;
 }
 
 .step-card h3 {
@@ -1248,15 +1260,19 @@ img {
   background: var(--bg-card);
 }
 
-.value-card-num {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 0.08em;
-  min-width: 20px;
-  padding-top: 3px;
+.value-card-icon {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
   flex-shrink: 0;
+  transition: background 150ms ease;
 }
 
 .value-card h3 {
