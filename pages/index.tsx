@@ -150,30 +150,47 @@ export default function Home({ listings, user, role }: HomePageProps) {
                       {(user.name?.[0] || user.email?.[0] || "U").toUpperCase()}
                     </div>
                     <div className="nav-user-details">
-                      <div className="nav-user-name">{user.name || user.email}</div>
+                      <div className="nav-user-name">
+                        {user.name || user.email}
+                      </div>
                       <div className="nav-user-role">{roleLabel}</div>
                     </div>
                   </div>
                   <div className="nav-user-actions">
                     {role === "SELLER_VERIFIED" && (
-                      <a href="/seller" className="nav-btn nav-btn-primary nav-btn-sm">
+                      <a
+                        href="/seller"
+                        className="nav-btn nav-btn-primary nav-btn-sm"
+                      >
                         Dashboard
                       </a>
                     )}
                     {role === "SELLER_PENDING" && (
-                      <a href="/seller/verify" className="nav-btn nav-btn-outline nav-btn-sm">
+                      <a
+                        href="/seller/verify"
+                        className="nav-btn nav-btn-outline nav-btn-sm"
+                      >
                         Verify
                       </a>
                     )}
                     {role === "ADMIN" && (
-                      <a href="/admin/review" className="nav-btn nav-btn-primary nav-btn-sm">
+                      <a
+                        href="/admin/review"
+                        className="nav-btn nav-btn-primary nav-btn-sm"
+                      >
                         Dashboard
                       </a>
                     )}
-                    <a href="/messages" className="nav-btn nav-btn-ghost nav-btn-sm">
+                    <a
+                      href="/messages"
+                      className="nav-btn nav-btn-ghost nav-btn-sm"
+                    >
                       Messages
                     </a>
-                    <a href="/api/auth/logout" className="nav-btn nav-btn-ghost nav-btn-sm">
+                    <a
+                      href="/api/auth/logout"
+                      className="nav-btn nav-btn-ghost nav-btn-sm"
+                    >
                       Log Out
                     </a>
                   </div>
@@ -182,11 +199,10 @@ export default function Home({ listings, user, role }: HomePageProps) {
             </div>
 
             <button className="nav-mobile-toggle" aria-label="Menu">
-              ☰
+              &#9776;
             </button>
           </div>
         </nav>
-
 
         {/* ── Hero ────────────────────────────────── */}
         <section className="hero">
@@ -195,18 +211,15 @@ export default function Home({ listings, user, role }: HomePageProps) {
           </div>
           <div className="hero-content">
             <div className="hero-text animate-in">
-              <div className="hero-badge">
-                <span className="badge-dot" />
-                Canada&#39;s commission-free marketplace
-              </div>
+              <p className="hero-eyebrow">
+                Canada&#39;s commission-free real estate marketplace
+              </p>
               <h1>
-                Scan the Sign.
-                <br />
                 <span className="highlight">Skip the Agent.</span>
               </h1>
               <p className="hero-subtitle">
-                Buy and sell homes directly. No commissions. No middlemen. Just
-                verified listings.
+                Point your phone at any DeedScan yard sign to see the full
+                listing — no calls, no callbacks, no commission.
               </p>
               <form
                 className="hero-search-inline"
@@ -223,7 +236,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
                   placeholder="E.x. 3-bed under $700k in Mississauga"
                   aria-label="Search homes with natural language"
                 />
-                <button type="submit">✨ Search using AI</button>
+                <button type="submit">Search with AI</button>
               </form>
               <p className="hero-search-note">
                 Natural-language search for buyers. Or{" "}
@@ -252,11 +265,11 @@ export default function Home({ listings, user, role }: HomePageProps) {
                   <div className="stats-card-item-label">Yours to Keep</div>
                 </div>
                 <div className="stats-card-item">
-                  <div className="stats-card-item-value">🛡️</div>
+                  <div className="stats-card-item-value">AI</div>
                   <div className="stats-card-item-label">Fraud Checked</div>
                 </div>
                 <div className="stats-card-item">
-                  <div className="stats-card-item-value">💬</div>
+                  <div className="stats-card-item-value">Live</div>
                   <div className="stats-card-item-label">Direct Chat</div>
                 </div>
               </div>
@@ -267,7 +280,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
         <section className="savings-section" ref={calcRef}>
           <div className="section-inner">
             <div className="section-header animate-in">
-              <div className="section-tag">💰 Savings Calculator</div>
+              <div className="section-tag">Savings Calculator</div>
               <h2>See How Much You&apos;ll Save</h2>
               <p>
                 Agents typically charge 5% commission. On a Canadian home,
@@ -344,7 +357,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
         <section className="listings-section" id="listings">
           <div className="section-inner">
             <div className="section-header animate-in">
-              <div className="section-tag">📍 Live Listings</div>
+              <div className="section-tag">Live Listings</div>
               <h2>Explore Properties</h2>
               <p>
                 Browse verified, commission-free listings from real Canadian
@@ -382,7 +395,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
         <section className="why-deedscan-section">
           <div className="section-inner">
             <div className="section-header animate-in">
-              <div className="section-tag">🛡️ Trust & Safety</div>
+              <div className="section-tag">Trust &amp; Safety</div>
               <h2>Why Choose DeedScan?</h2>
               <p>
                 We built a marketplace that puts your security and wallet first.
@@ -391,26 +404,32 @@ export default function Home({ listings, user, role }: HomePageProps) {
 
             <div className="why-grid">
               <div className="why-card animate-in animate-in-delay-1">
-                <div className="why-card-icon">🏦</div>
-                <h3>Bank-Grade Verification</h3>
+                <span className="why-card-num">01</span>
+                <h3>Identity-Verified Sellers</h3>
                 <p>
-                  Every seller undergoes strict government ID verification via Stripe Identity before they can list a property. No fake accounts.
+                  Every seller undergoes strict government ID verification via
+                  Stripe Identity before they can list a property. No fake
+                  accounts.
                 </p>
               </div>
 
               <div className="why-card animate-in animate-in-delay-2">
-                <div className="why-card-icon">🤖</div>
+                <span className="why-card-num">02</span>
                 <h3>AI Fraud Detection</h3>
                 <p>
-                  Our built-in AI scans every image and listing for stolen photos, unrealistic pricing, and perceptual hashes to eliminate scams before they go live.
+                  Our built-in AI scans every image and listing for stolen
+                  photos, unrealistic pricing, and perceptual hashes to
+                  eliminate scams before they go live.
                 </p>
               </div>
 
               <div className="why-card animate-in animate-in-delay-3">
-                <div className="why-card-icon">💸</div>
-                <h3>Zero Intermediaries</h3>
+                <span className="why-card-num">03</span>
+                <h3>Zero Commission</h3>
                 <p>
-                  We charge absolutely zero commission. You connect directly with verified buyers using our secure, encrypted chat. Keep 100% of your sale.
+                  We charge absolutely zero commission. You connect directly
+                  with verified buyers using our secure, encrypted chat. Keep
+                  100% of your sale.
                 </p>
               </div>
             </div>
@@ -421,7 +440,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
         <section className="how-section" id="how-it-works">
           <div className="section-inner">
             <div className="section-header animate-in">
-              <div className="section-tag">🧩 How It Works</div>
+              <div className="section-tag">How It Works</div>
               <h2>Simple, Transparent, Direct</h2>
               <p>
                 Whether you&#39;re buying or selling, DeedScan keeps it
@@ -450,7 +469,6 @@ export default function Home({ listings, user, role }: HomePageProps) {
                   key={`${howTab}-${i}`}
                   className={`step-card animate-in animate-in-delay-${i + 1}`}
                 >
-                  <span className="step-icon">{step.icon}</span>
                   <div className="step-number">{i + 1}</div>
                   <h3>{step.title}</h3>
                   <p>{step.desc}</p>
@@ -464,7 +482,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
         <section className="value-section" id="for-buyers">
           <div className="section-inner">
             <div className="section-header animate-in">
-              <div className="section-tag">🏡 For Buyers</div>
+              <div className="section-tag">For Buyers</div>
               <h2>Buy Smarter. Save More.</h2>
               <p>
                 Direct access to sellers means lower prices, faster responses,
@@ -477,7 +495,9 @@ export default function Home({ listings, user, role }: HomePageProps) {
                   key={i}
                   className={`value-card animate-in animate-in-delay-${i + 1}`}
                 >
-                  <div className="value-card-icon">{v.icon}</div>
+                  <span className="value-card-num">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                   <div>
                     <h3>{v.title}</h3>
                     <p>{v.desc}</p>
@@ -496,7 +516,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
         >
           <div className="section-inner">
             <div className="section-header animate-in">
-              <div className="section-tag">📣 For Sellers</div>
+              <div className="section-tag">For Sellers</div>
               <h2>List Free. Sell Direct. Keep Everything.</h2>
               <p>
                 Your home, your sale, your profit. No agent taking a 5% cut.
@@ -508,7 +528,9 @@ export default function Home({ listings, user, role }: HomePageProps) {
                   key={i}
                   className={`value-card animate-in animate-in-delay-${i + 1}`}
                 >
-                  <div className="value-card-icon">{v.icon}</div>
+                  <span className="value-card-num">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                   <div>
                     <h3>{v.title}</h3>
                     <p>{v.desc}</p>
@@ -525,7 +547,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
         <footer className="footer">
           <div className="section-inner">
             <div className="footer-copy">
-              © {new Date().getFullYear()} DeedScan. Built in Canada 🇨🇦
+              © {new Date().getFullYear()} DeedScan. Built in Canada.
             </div>
             <div className="footer-links">
               <a href="#how-it-works">How It Works</a>
@@ -559,7 +581,6 @@ export default function Home({ listings, user, role }: HomePageProps) {
             </div>
             <div className="role-cards">
               <a href="/api/auth/signup-buyer" className="role-card">
-                <div className="role-card-icon">🏡</div>
                 <h3>I&apos;m a Buyer</h3>
                 <p>
                   Browse listings, message sellers directly, and find your next
@@ -568,7 +589,6 @@ export default function Home({ listings, user, role }: HomePageProps) {
                 <span className="role-card-arrow">Get started →</span>
               </a>
               <a href="/api/auth/signup-seller" className="role-card">
-                <div className="role-card-icon">📣</div>
                 <h3>I&apos;m a Seller</h3>
                 <p>
                   List your property, get a QR yard sign, and keep 100% of your
