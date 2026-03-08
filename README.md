@@ -1,142 +1,181 @@
 # DeedScan
 
-**No agent. No commission.** Canadian real estate marketplace: sellers list via QR on a for-sale sign; buyers scan, view listings, get AI price comparisons, and message sellers. Auth0 verifies sellers; confidence scores reduce fraud.
+> **No agent. No commission.** A Canadian real estate marketplace built for Hack Canada 2026.
 
-- Sellers create listings (with photo upload), get QR for App Clip, run fraud-check
-- Buyers browse listings (CAD), message sellers (real-time chat)
-- Auth0 passwordless + role-based access (buyer, seller_pending, seller_verified, admin)
+Sellers plant a for-sale sign, scan a QR code, and their listing is live in minutes. Buyers browse, get an AI price comparison, and message the seller directly — no agent, no 5% cut. Every listing runs an automated fraud-confidence score before it goes public.
+
+---
+
+## What it does
+
+| Role       | What they get                                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Seller** | Create a listing with photos, get a QR code for an Apple App Clip sign, run AI fraud-check, manage verification docs |
+| **Buyer**  | Browse listings in CAD, view neighborhood scores + map, get AI price estimate, real-time chat with seller            |
+| **Admin**  | Review seller verification submissions and flagged listings from a dedicated dashboard                               |
+
+Key features:
+
+- **AI fraud detection** — Gemini analyzes listing data and returns a 0–100 confidence score with breakdown
+- **AI price estimate** — Gemini gives a CAD price range with explanation for any address
+- **Neighborhood scoring** — walkability, transit, and school scores with interactive Leaflet map
+- **Real-time chat** — Socket.io WebSocket server with typing indicators
+- **Seller verification** — gov ID + ownership proof upload, admin review queue
+- **App Clip QR** — QR codes that deep-link to a native iOS App Clip
+- **Role-based access** — Auth0 + Prisma enforce buyer / seller_pending / seller_verified / admin
+
+---
 
 ## Stack
-- Next.js 14 (Pages Router, TypeScript)
-- Auth0 (`@auth0/nextjs-auth0`)
-- Prisma ORM + SQLite (Photo, Listing, Message, User)
-- Socket.io (chat server in `server/ws-server.js`)
-- Zod (validation), centralized errors and config (`lib/api/`, `lib/config.ts`)
 
-## 1) Install
+| Layer        | Technology                                                         |
+| ------------ | ------------------------------------------------------------------ |
+| Framework    | Next.js 16, Pages Router, TypeScript                               |
+| Auth         | Auth0 (`@auth0/nextjs-auth0` v4), RBAC with custom API permissions |
+| Database     | Prisma ORM + SQLite (dev)                                          |
+| AI           | Google Gemini (`@google/genai`)                                    |
+| Real-time    | Socket.io WebSocket server                                         |
+| Maps         | Leaflet (dynamic import, SSR-safe)                                 |
+| Validation   | Zod, centralized error codes (`lib/api/`)                          |
+| File storage | Local (`public/uploads`) — S3-ready via `UPLOAD_PROVIDER`          |
+
+---
+
+## Quick start
+
+### 1. Install
 
 ```bash
 npm install
 ```
 
-## 2) Configure environment
-
-Copy `.env.example` to `.env` and fill in your Auth0 values.
+### 2. Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-In Auth0, configure these app URLs:
+Fill in Auth0 values. See `.env.example` for all required and optional variables.
+
+In Auth0 → Application settings:
+
 - Allowed Callback URLs: `http://localhost:3000/api/auth/callback`
 - Allowed Logout URLs: `http://localhost:3000`
 - Allowed Web Origins: `http://localhost:3000`
 
-Role-aware signup UX:
-- `Sign up as buyer` sets initial DB role to `buyer`
-- `Sign up as seller` sets initial DB role to `seller_pending`
-
-## 3) Create DB
+### 3. Set up the database
 
 ```bash
 npm run prisma:migrate -- --name init
 npm run prisma:generate
 ```
 
-## 4) Run
+Seed demo data (optional):
 
-**Option A — Next.js only (REST APIs):**
+```bash
+npm run seed:demo
+```
+
+### 4. Run
+
+Next.js only:
+
 ```bash
 npm run dev
 ```
-Open `http://localhost:3000`.
 
-**Option B — Next.js + WebSocket chat server (full stack):**
+Full stack with WebSocket chat:
+
 ```bash
 # Terminal 1
 npm run dev
-
 # Terminal 2
 npm run server:ws
 ```
-Or run both in one process:
+
+Or both at once:
+
 ```bash
 node scripts/run-all.js
 ```
 
-## 5) Test the APIs
+Open `http://localhost:3000`.
 
-With the dev server running (`npm run dev`), you can test from another terminal:
+---
+
+## Admin dashboard
+
+`/admin/review` — seller verification queue and flagged listing review.
+
+Access requires **both**:
+
+1. Auth0 `admin` role with `admin:review` permission in the access token
+2. `ADMIN` role in the DB
+
+Promote a user (syncs both):
 
 ```bash
-# Listings
-curl -s http://localhost:3000/api/listings | jq
-
-# Single listing (use a real id from the list above)
-curl -s http://localhost:3000/api/listings/<LISTING_ID> | jq
-
-# Nearby listings (optional: lat, lng, radius_km, price_min, price_max, bedrooms)
-curl -s "http://localhost:3000/api/listings/nearby?radius_km=50" | jq
-
-# Price estimate (mock if GEMINI_API_KEY not set)
-curl -s -X POST http://localhost:3000/api/price-estimate \
-  -H "Content-Type: application/json" \
-  -d '{"address":"123 Main St, Toronto, ON","sqft":1200,"bedrooms":3}' | jq
-
-# QR code for a listing (use a real listing id)
-curl -s -X POST http://localhost:3000/api/qr/generate \
-  -H "Content-Type: application/json" \
-  -d '{"listingId":"<LISTING_ID>"}' | jq
-
-# Fraud check for a listing (updates confidenceScore)
-curl -s -X POST http://localhost:3000/api/listings/<LISTING_ID>/fraud-check | jq
+npm run promote:admin -- <email>
 ```
 
-**Auth-protected endpoints** (require logged-in session cookie):
-- `POST /api/auth/verify-token` — returns current user id and role
-- `POST /api/listings` — create listing (`seller_verified` only)
-- `POST /api/profile/role` — self-switch allowed only: `BUYER` <-> `SELLER_PENDING`
-- `GET /api/messages?listingId=...&otherUserId=...` — chat history
-- `POST /api/messages` — send message (`buyer` or `admin`; body: `recipientId`, `listingId`, `content`)
+The user must log out and back in after promotion.
 
-**WebSocket (chat):** Connect to `http://localhost:3001` (or `NEXT_PUBLIC_WS_URL`) with Socket.io. Send **userId** in handshake **auth** (from `POST /api/auth/verify-token`). Events: **send_message** `{ recipientId, listingId, content }`; **typing_start** / **typing_stop** `{ listingId, recipientId }`. Server emits **new_message** (full message), **typing** `{ listingId, userId, name }`, **typing_stop** `{ listingId, userId }`, **error** `{ code, message }`.
+**Auth0 setup required:**
 
-## Main routes
-- `/` browse listings
-- `/seller` seller dashboard (requires login and seller role)
+- Dashboard → APIs → create a Custom API, identifier = `AUTH0_AUDIENCE` value (e.g. `http://localhost:3000`)
+- Add permission `admin:review` to that API
+- API Settings: enable **RBAC** and **Add Permissions in the Access Token**
+- The M2M app (`AUTH0_M2M_CLIENT_ID/SECRET`) needs Management API scopes: `read:users`, `read:roles`, `create:roles`, `update:roles`, `create:role_members`
 
-## Main APIs
-- `GET /api/listings` — list all listings
-- `GET /api/listings/[id]` — single listing
-- `GET /api/listings/nearby` — nearby (query: lat, lng, radius_km, price_min, price_max, bedrooms)
-- `POST /api/listings` — create listing (seller-only; body may include sqft, bedrooms, latitude, longitude, photoUrls; returns confidenceScore)
-- `POST /api/listings/[id]/fraud-check` — run fraud check, set confidenceScore
-- `POST /api/upload` — multipart photo upload (seller-only); returns `{ urls }` for use in `photoUrls`
-- `POST /api/price-estimate` — AI/mock price range in CAD (body: address, sqft, bedrooms)
-- `POST /api/qr/generate` — QR code for App Clip URL (body: listingId)
-- `POST /api/auth/verify-token` — current user id & role (session)
-- `GET /api/messages?listingId=...&otherUserId=...` — chat history (auth)
-- `POST /api/messages` — send message (auth; body: recipientId, listingId, content)
-- `POST /api/profile/role` — set role (`BUYER` or `SELLER_PENDING`)
+---
 
-**API naming:** We use REST-style paths (e.g. `POST /api/listings` instead of `/api/listing/create`). Full reference: **[docs/API.md](docs/API.md)** (error format, all endpoints, config).
+## API reference
 
-## Prisma schema summary
-- `User` (`id`, `auth0Id`, `email`, `name`, `role`, `blockedReason`)
-- `Listing` (`id`, `title`, `description`, `address`, `price`, `imageUrl`, `sqft`, `bedrooms`, `latitude`, `longitude`, `confidenceScore`, `sellerId`)
-- `Photo` (`id`, `url`, `order`, `listingId`) — multiple images per listing
-- `Message` (`id`, `content`, `read`, `senderId`, `recipientId`, `listingId`, `createdAt`)
+Full reference: [docs/API.md](docs/API.md)
 
-Relationships:
-- one `User` (seller) → many `Listing`
-- `Message` links two users and a listing
+| Method | Path                              | Auth              | Description                                                               |
+| ------ | --------------------------------- | ----------------- | ------------------------------------------------------------------------- |
+| GET    | `/api/listings`                   | No                | All listings                                                              |
+| GET    | `/api/listings/[id]`              | No                | Single listing with photos + seller                                       |
+| GET    | `/api/listings/nearby`            | No                | `lat`, `lng`, `radius_km`, `price_min`, `price_max`, `bedrooms`           |
+| POST   | `/api/listings`                   | `SELLER_VERIFIED` | Create listing (`photoUrls`, `sqft`, `bedrooms`, `latitude`, `longitude`) |
+| POST   | `/api/listings/[id]/fraud-check`  | No                | Run fraud check; returns `confidenceScore` + breakdown                    |
+| GET    | `/api/listings/[id]/neighborhood` | No                | Walkability, transit, school scores + coordinates                         |
+| POST   | `/api/upload`                     | `SELLER_VERIFIED` | Multipart photo upload; returns `{ urls }`                                |
+| POST   | `/api/price-estimate`             | No                | Gemini CAD price range; body: `address`, `sqft`, `bedrooms`               |
+| POST   | `/api/qr/generate`                | No                | App Clip QR code; body: `{ listingId }`                                   |
+| GET    | `/api/messages`                   | Session           | Chat history; query: `listingId`, `otherUserId`                           |
+| POST   | `/api/messages`                   | Session           | Send message; body: `recipientId`, `listingId`, `content`                 |
+| GET    | `/api/conversations`              | Session           | All conversations for current user                                        |
+| POST   | `/api/auth/verify-token`          | Session           | Returns `{ userId, role }`                                                |
+| POST   | `/api/seller/verification`        | `SELLER_PENDING`  | Submit gov ID + ownership proof                                           |
+| POST   | `/api/upload/verification`        | Session           | Upload verification documents                                             |
+| GET    | `/api/admin/review/queue`         | Admin             | Pending sellers + flagged listings                                        |
+| POST   | `/api/admin/review/sellers/[id]`  | Admin             | Approve or reject seller                                                  |
+| POST   | `/api/admin/review/flags/[id]`    | Admin             | Approve or ban flagged listing                                            |
 
-## Auth0 tenant checklist
-For tenant `deedscan.us.auth0.com`:
-- Enable passwordless login: Email OTP (6 digits), magic link fallback.
-- Enable social providers as needed: Google, Apple.
-- Add user metadata fields: `role` and `blocked_reason`.
-- Create Auth0 roles: `seller_verified`, `seller_pending`, `buyer`, `admin`.
-- Add Post Login Action:
-  - deny login when user is blocked
-  - enforce your free-plan messaging policy (for example 2-week limit)
+**WebSocket** (`ws://localhost:3001`): authenticate with `{ auth: { userId } }`. Events:
+
+- Emit: `send_message { recipientId, listingId, content }`, `typing_start/stop { listingId, recipientId }`
+- Receive: `new_message`, `typing { listingId, userId, name }`, `typing_stop`, `error { code, message }`
+
+---
+
+## Data model
+
+- `User` — `id`, `auth0Id`, `email`, `name`, `role`, `blockedReason`
+- `Listing` — `title`, `description`, `address`, `price`, `sqft`, `bedrooms`, `lat/lng`, `confidenceScore`, `breakdownJson`, `flagsJson`, `sellerId`
+- `Photo` — `url`, `order`, `listingId` (multiple photos per listing)
+- `Message` — `content`, `read`, `senderId`, `recipientId`, `listingId`
+- `SellerVerificationSubmission` — `govIdDocumentUrl`, `ownershipProofUrl`, `status`, `rejectionReason`
+- `FraudFlag` — `confidenceScore`, `breakdownJson`, `matchedImagesJson`, `status`, `notes`
+
+---
+
+## Auth0 tenant setup checklist
+
+- [ ] Configure application callback / logout / origin URLs
+- [ ] Create a Custom API with identifier = `AUTH0_AUDIENCE`; add `admin:review` permission; enable RBAC + Add Permissions in Access Token
+- [ ] Create roles: `buyer`, `seller_pending`, `seller_verified`, `admin`
+- [ ] Create an M2M application authorized on the Management API with user/role scopes
+- [ ] Add a Post Login Action to block flagged users
