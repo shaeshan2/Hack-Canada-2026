@@ -20,6 +20,10 @@ INSERT INTO "User" ("id", "auth0Id", "email", "name", "role", "blockedReason", "
 UPDATE "User" SET role = 'ADMIN', updatedAt = CURRENT_TIMESTAMP
   WHERE email = 'test@test.com';
 
+-- Ensure admin@test.com always has ADMIN role (same workflow as above).
+UPDATE "User" SET role = 'ADMIN', updatedAt = CURRENT_TIMESTAMP
+  WHERE email = 'admin@test.com';
+
 -- Demo sellers (verified so they can own listings)
 INSERT INTO "User" ("id", "auth0Id", "email", "name", "role", "blockedReason", "createdAt", "updatedAt") VALUES
   ('demo_seller_001', 'auth0|demo_seller_001', 'amelia.chen@deedscan.demo', 'Amelia Chen', 'SELLER_VERIFIED', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),

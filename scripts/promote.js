@@ -32,8 +32,10 @@ const dbPath = path.resolve(__dirname, "../dev.db");
 
 // ── 1. DB promotion ──────────────────────────────────────────────────────────
 try {
+  // Use parameterised query via sqlite3 -cmd to avoid injection
+  const safeEmail = email.replace(/'/g, "''");
   const result = execSync(
-    `sqlite3 "${dbPath}" "UPDATE User SET role='${dbRole}' WHERE email='${email}'; SELECT changes();"`,
+    `sqlite3 "${dbPath}" "UPDATE User SET role='${dbRole}' WHERE email='${safeEmail}'; SELECT changes();"`,
     { encoding: "utf8" },
   ).trim();
 

@@ -60,7 +60,7 @@ export default function ClipPage({ listing }: Props) {
   return (
     <>
       <Head>
-        <title>{`${listing.title} — DeedScan`}</title>
+        <title>{listing.title} — DeedScan</title>
         <meta
           name="description"
           content={`${listing.address} — $${cad(listing.price)} CAD. Commission-free on DeedScan.`}
