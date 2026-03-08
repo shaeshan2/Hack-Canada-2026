@@ -11,7 +11,13 @@ export async function requireAdminUser(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const session = await auth0.getSession(req);
+  let session: Awaited<ReturnType<typeof auth0.getSession>>;
+  try {
+    session = await auth0.getSession(req);
+  } catch {
+    res.status(401).json({ error: "Not authenticated" });
+    return null;
+  }
   if (!session?.user) {
     res.status(401).json({ error: "Not authenticated" });
     return null;
@@ -57,4 +63,23 @@ export async function requireAdminUser(
   }
 
   return dbUser;
+}
+
+/**
+ * HOF that wraps an admin-only API route with auth error handling.
+ * Catches malformed/tampered session cookies that would otherwise produce 500s.
+ */
+export function withAdminRequired(
+  handler: (req: NextApiRequest, res: NextApiResponse) => Promise<void>
+) {
+  // Wrap the whole withApiAuthRequired result so we can catch its own throws
+  // (e.g. cookie decryption errors from tampered sessions)
+  const protected_ = auth0.withApiAuthRequired(handler);
+  return async (req: NextApiRequest, res: NextApiResponse) => {
+    try {
+      await protected_(req, res);
+    } catch {
+      res.status(401).json({ error: "Not authenticated" });
+    }
+  };
 }

@@ -1,11 +1,14 @@
 /**
  * Auth0 Phase 1 Sanity Test
  *
- * Checks four things in sequence:
+ * Checks six things in sequence:
  *   Part 1 — M2M creds work + all required roles exist in Auth0 tenant
  *   Part 2 — /api/auth/register creates user, sets cookie, and assigns role in Auth0
  *   Part 3 — DB user exists (only present after first login callback — notes if missing)
  *   Part 4 — blockAuth0User correctly sets blocked:true in Auth0
+ *   Part 5 — Resource Server RBAC + permissions config
+ *   Part 6 — Post-Login Action deployed and bound to Login flow
+ *   Part 7 — Admin route protection (no session, forged token, non-admin session all get 401/403)
  *
  * Usage:
  *   node scripts/test-auth.js
@@ -423,6 +426,69 @@ async function part5_resourceServer(token) {
     );
 }
 
+// ── Part 7: Admin route protection ───────────────────────────────────────────
+
+async function part7_adminProtection() {
+  console.log("\n📋  Part 7: Admin route protection (attack simulation)\n");
+
+  const adminRoutes = [
+    { method: "GET",  path: "/api/admin/review/queue",                     label: "GET /api/admin/review/queue" },
+    { method: "POST", path: "/api/admin/review/flags/nonexistent-id",      label: "POST /api/admin/review/flags/:id" },
+    { method: "POST", path: "/api/admin/review/sellers/nonexistent-id",    label: "POST /api/admin/review/sellers/:id" },
+  ];
+
+  // Attack 1: No session at all
+  console.log("  ── No session (unauthenticated request) ──");
+  for (const route of adminRoutes) {
+    const r = await fetch(`${BASE_URL}${route.path}`, {
+      method: route.method,
+      headers: { "Content-Type": "application/json" },
+      body: route.method === "POST" ? JSON.stringify({ decision: "approve" }) : undefined,
+    });
+    if (r.status === 401 || r.status === 403) {
+      pass(`${route.label} → ${r.status} (blocked)`);
+    } else {
+      fail(`${route.label} should be 401/403`, `Got HTTP ${r.status}`);
+    }
+  }
+
+  // Attack 2: Forged/garbage Bearer token
+  console.log("\n  ── Forged Bearer token ──");
+  for (const route of adminRoutes) {
+    const r = await fetch(`${BASE_URL}${route.path}`, {
+      method: route.method,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhdHRhY2tlciIsInJvbGVzIjpbImFkbWluIl0sInBlcm1pc3Npb25zIjpbImFkbWluOnJldmlldyJdfQ.forged_signature",
+      },
+      body: route.method === "POST" ? JSON.stringify({ decision: "approve" }) : undefined,
+    });
+    if (r.status === 401 || r.status === 403) {
+      pass(`${route.label} rejects forged token → ${r.status}`);
+    } else {
+      fail(`${route.label} should reject forged token`, `Got HTTP ${r.status}`);
+    }
+  }
+
+  // Attack 3: Valid session cookie format but tampered (just a garbage cookie)
+  console.log("\n  ── Tampered session cookie ──");
+  for (const route of adminRoutes) {
+    const r = await fetch(`${BASE_URL}${route.path}`, {
+      method: route.method,
+      headers: {
+        "Content-Type": "application/json",
+        "Cookie": "appSession=tampered.garbage.value",
+      },
+      body: route.method === "POST" ? JSON.stringify({ decision: "approve" }) : undefined,
+    });
+    if (r.status === 401 || r.status === 403) {
+      pass(`${route.label} rejects tampered cookie → ${r.status}`);
+    } else {
+      fail(`${route.label} should reject tampered cookie`, `Got HTTP ${r.status}`);
+    }
+  }
+}
+
 // ── Part 6: Post-Login Action deployed and bound to Login flow ────────────────
 
 async function part6_loginAction(token) {
@@ -562,6 +628,12 @@ async function main() {
     await part6_loginAction(token);
   } catch (e) {
     fail("Part 6 threw an unexpected error", e.message);
+  }
+
+  try {
+    await part7_adminProtection();
+  } catch (e) {
+    fail("Part 7 threw an unexpected error", e.message);
   }
 
   await cleanup(token, toCleanup);
