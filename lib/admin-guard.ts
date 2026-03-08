@@ -70,7 +70,7 @@ export async function requireAdminUser(
  * Catches malformed/tampered session cookies that would otherwise produce 500s.
  */
 export function withAdminRequired(
-  handler: (req: NextApiRequest, res: NextApiResponse) => Promise<void>
+  handler: (req: NextApiRequest, res: NextApiResponse) => Promise<void>,
 ) {
   // Wrap the whole withApiAuthRequired result so we can catch its own throws
   // (e.g. cookie decryption errors from tampered sessions)

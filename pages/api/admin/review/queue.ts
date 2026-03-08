@@ -3,7 +3,10 @@ import "../../../../lib/auth0-env";
 import { FraudFlagStatus, VerificationStatus } from "@prisma/client";
 import { auth0 } from "../../../../lib/auth0";
 import { prisma } from "../../../../lib/prisma";
-import { requireAdminUser, withAdminRequired } from "../../../../lib/admin-guard";
+import {
+  requireAdminUser,
+  withAdminRequired,
+} from "../../../../lib/admin-guard";
 
 function parseJson<T>(value: string | null): T | null {
   if (!value) return null;
@@ -14,7 +17,10 @@ function parseJson<T>(value: string | null): T | null {
   }
 }
 
-export default withAdminRequired(async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default withAdminRequired(async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     res.status(405).json({ error: "Method not allowed" });
@@ -35,10 +41,10 @@ export default withAdminRequired(async function handler(req: NextApiRequest, res
             email: true,
             name: true,
             role: true,
-            auth0Id: true
-          }
-        }
-      }
+            auth0Id: true,
+          },
+        },
+      },
     }),
     prisma.fraudFlag.findMany({
       // Return recent fraud flags across all statuses; client applies filters.
@@ -53,13 +59,13 @@ export default withAdminRequired(async function handler(req: NextApiRequest, res
                 name: true,
                 auth0Id: true,
                 role: true,
-                blockedReason: true
-              }
-            }
-          }
-        }
-      }
-    })
+                blockedReason: true,
+              },
+            },
+          },
+        },
+      },
+    }),
   ]);
 
   res.status(200).json({
@@ -67,7 +73,7 @@ export default withAdminRequired(async function handler(req: NextApiRequest, res
     flaggedListings: flaggedListings.map((flag) => ({
       ...flag,
       breakdown: parseJson<Record<string, number>>(flag.breakdownJson),
-      matchedImages: parseJson<string[]>(flag.matchedImagesJson)
-    }))
+      matchedImages: parseJson<string[]>(flag.matchedImagesJson),
+    })),
   });
 });

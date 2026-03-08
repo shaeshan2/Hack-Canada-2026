@@ -5,6 +5,7 @@ DELETE FROM "Message" WHERE "listingId" LIKE 'demo_listing_%';
 DELETE FROM "Photo" WHERE "listingId" LIKE 'demo_listing_%';
 DELETE FROM "FraudFlag" WHERE "listingId" LIKE 'demo_listing_%';
 DELETE FROM "Listing" WHERE "id" LIKE 'demo_listing_%';
+DELETE FROM "SellerVerificationSubmission" WHERE "id" LIKE 'demo_svs_%';
 DELETE FROM "User" WHERE "id" LIKE 'demo_buyer_%';
 DELETE FROM "User" WHERE "id" LIKE 'demo_seller_%';
 DELETE FROM "User" WHERE "id" = 'demo_admin_001';
@@ -26,6 +27,11 @@ INSERT INTO "User" ("id", "auth0Id", "email", "name", "role", "blockedReason", "
   ('demo_seller_003', 'auth0|demo_seller_003', 'sophia.martin@deedscan.demo', 'Sophia Martin', 'SELLER_VERIFIED', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('demo_seller_004', 'auth0|demo_seller_004', 'noah.kim@deedscan.demo', 'Noah Kim', 'SELLER_VERIFIED', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('demo_seller_005', 'auth0|demo_seller_005', 'chloe.roy@deedscan.demo', 'Chloe Roy', 'SELLER_VERIFIED', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Demo sellers awaiting verification (these appear in the admin review queue).
+INSERT INTO "User" ("id", "auth0Id", "email", "name", "role", "blockedReason", "createdAt", "updatedAt") VALUES
+  ('demo_seller_006', 'auth0|demo_seller_006', 'james.wilson@deedscan.demo', 'James Wilson', 'SELLER_PENDING', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('demo_seller_007', 'auth0|demo_seller_007', 'isabella.clark@deedscan.demo', 'Isabella Clark', 'SELLER_PENDING', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Demo buyers for chat threads.
 INSERT INTO "User" ("id", "auth0Id", "email", "name", "role", "blockedReason", "createdAt", "updatedAt") VALUES
@@ -134,5 +140,43 @@ SELECT 'demo_msg_test_006', 'Sure, I can send them after 6 PM today.', 0, 'demo_
 FROM "User" u
 WHERE u.email = 'test@test.com'
 LIMIT 1;
+
+-- ─────────────────────────────────────────────────────────
+-- Fraud breakdown data for all demo listings
+-- ─────────────────────────────────────────────────────────
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":95,"reverseImage":90,"exifMatch":88,"priceSanity":92,"addressValid":90}', "flagsJson"='[]' WHERE "id"='demo_listing_001';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":88,"reverseImage":84,"exifMatch":82,"priceSanity":90,"addressValid":86}', "flagsJson"='[]' WHERE "id"='demo_listing_002';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":96,"reverseImage":92,"exifMatch":90,"priceSanity":94,"addressValid":93}', "flagsJson"='[]' WHERE "id"='demo_listing_003';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":80,"reverseImage":76,"exifMatch":82,"priceSanity":80,"addressValid":77}', "flagsJson"='[]' WHERE "id"='demo_listing_004';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":90,"reverseImage":86,"exifMatch":88,"priceSanity":90,"addressValid":86}', "flagsJson"='[]' WHERE "id"='demo_listing_005';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":74,"reverseImage":68,"exifMatch":70,"priceSanity":78,"addressValid":72}', "flagsJson"='["Minor EXIF inconsistency detected"]' WHERE "id"='demo_listing_006';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":86,"reverseImage":82,"exifMatch":84,"priceSanity":86,"addressValid":82}', "flagsJson"='[]' WHERE "id"='demo_listing_007';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":93,"reverseImage":89,"exifMatch":88,"priceSanity":90,"addressValid":90}', "flagsJson"='[]' WHERE "id"='demo_listing_008';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":70,"reverseImage":55,"exifMatch":62,"priceSanity":78,"addressValid":72}', "flagsJson"='["Possible duplicate photo","GPS coordinates do not match address"]' WHERE "id"='demo_listing_009';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":98,"reverseImage":95,"exifMatch":94,"priceSanity":96,"addressValid":92}', "flagsJson"='[]' WHERE "id"='demo_listing_010';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":83,"reverseImage":79,"exifMatch":80,"priceSanity":84,"addressValid":79}', "flagsJson"='[]' WHERE "id"='demo_listing_011';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":78,"reverseImage":72,"exifMatch":76,"priceSanity":80,"addressValid":74}', "flagsJson"='["Reverse image search returned a partial match"]' WHERE "id"='demo_listing_012';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":65,"reverseImage":62,"exifMatch":74,"priceSanity":72,"addressValid":74}', "flagsJson"='["Stock photo match found","Address could not be fully verified"]' WHERE "id"='demo_listing_013';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":48,"reverseImage":42,"exifMatch":56,"priceSanity":75,"addressValid":65}', "flagsJson"='["Duplicate photo detected","Image found in other online listings","Low photo authenticity score"]' WHERE "id"='demo_listing_014';
+UPDATE "Listing" SET "breakdownJson"='{"perceptualHash":38,"reverseImage":48,"exifMatch":52,"priceSanity":68,"addressValid":58}', "flagsJson"='["Photos appear reused from a different property","Address verification incomplete","Significant price outlier detected"]' WHERE "id"='demo_listing_015';
+
+-- ─────────────────────────────────────────────────────────
+-- FraudFlag rows (admin review queue)
+-- ─────────────────────────────────────────────────────────
+INSERT INTO "FraudFlag" ("id","listingId","status","confidenceScore","breakdownJson","matchedImagesJson","notes","createdAt","reviewedAt","reviewedById") VALUES
+  ('demo_flag_015','demo_listing_015','PENDING_REVIEW',52,'{"perceptualHash":38,"reverseImage":48,"exifMatch":52,"priceSanity":68,"addressValid":58}','[]',NULL,datetime('now','-2 day'),NULL,NULL),
+  ('demo_flag_014','demo_listing_014','PENDING_REVIEW',58,'{"perceptualHash":48,"reverseImage":42,"exifMatch":56,"priceSanity":75,"addressValid":65}','[]',NULL,datetime('now','-1 day'),NULL,NULL),
+  ('demo_flag_009','demo_listing_009','PENDING_REVIEW',67,'{"perceptualHash":70,"reverseImage":55,"exifMatch":62,"priceSanity":78,"addressValid":72}','[]',NULL,datetime('now','-3 day'),NULL,NULL),
+  ('demo_flag_012','demo_listing_012','APPROVED',76,'{"perceptualHash":78,"reverseImage":72,"exifMatch":76,"priceSanity":80,"addressValid":74}','[]','Reviewed: reverse image match was from the same property listed previously.',datetime('now','-5 day'),datetime('now','-4 day'),'demo_admin_001'),
+  ('demo_flag_013','demo_listing_013','APPROVED',69,'{"perceptualHash":65,"reverseImage":62,"exifMatch":74,"priceSanity":72,"addressValid":74}','[]','Reviewed: stock photo used as placeholder; original photos provided and verified.',datetime('now','-6 day'),datetime('now','-5 day'),'demo_admin_001');
+
+-- ─────────────────────────────────────────────────────────
+-- Seller verification submissions (admin review queue)
+-- ─────────────────────────────────────────────────────────
+INSERT INTO "SellerVerificationSubmission" ("id","userId","govIdDocumentUrl","ownershipProofUrl","status","rejectionReason","aiAnalysis","aiConfidence","submittedAt","reviewedAt","reviewedById") VALUES
+  ('demo_svs_001','demo_seller_006','/uploads/mmgmvb78-wd82d7f.png','/uploads/mmgmvb78-wd82d7f.png','PENDING',NULL,NULL,NULL,datetime('now','-1 day'),NULL,NULL),
+  ('demo_svs_002','demo_seller_007','/uploads/mmgmvb78-wd82d7f.png','/uploads/mmgmvb78-wd82d7f.png','PENDING',NULL,NULL,NULL,datetime('now','-4 hours'),NULL,NULL),
+  ('demo_svs_003','demo_seller_001','/uploads/mmgmvb78-wd82d7f.png','/uploads/mmgmvb78-wd82d7f.png','APPROVED',NULL,'Documents appear authentic. Property ownership confirmed.',94,datetime('now','-30 day'),datetime('now','-29 day'),'demo_admin_001'),
+  ('demo_svs_004','demo_seller_002','/uploads/mmgmvb78-wd82d7f.png','/uploads/mmgmvb78-wd82d7f.png','APPROVED',NULL,'All documents verified successfully.',91,datetime('now','-25 day'),datetime('now','-24 day'),'demo_admin_001');
 
 COMMIT;

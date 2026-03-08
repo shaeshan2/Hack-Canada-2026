@@ -432,9 +432,21 @@ async function part7_adminProtection() {
   console.log("\n📋  Part 7: Admin route protection (attack simulation)\n");
 
   const adminRoutes = [
-    { method: "GET",  path: "/api/admin/review/queue",                     label: "GET /api/admin/review/queue" },
-    { method: "POST", path: "/api/admin/review/flags/nonexistent-id",      label: "POST /api/admin/review/flags/:id" },
-    { method: "POST", path: "/api/admin/review/sellers/nonexistent-id",    label: "POST /api/admin/review/sellers/:id" },
+    {
+      method: "GET",
+      path: "/api/admin/review/queue",
+      label: "GET /api/admin/review/queue",
+    },
+    {
+      method: "POST",
+      path: "/api/admin/review/flags/nonexistent-id",
+      label: "POST /api/admin/review/flags/:id",
+    },
+    {
+      method: "POST",
+      path: "/api/admin/review/sellers/nonexistent-id",
+      label: "POST /api/admin/review/sellers/:id",
+    },
   ];
 
   // Attack 1: No session at all
@@ -443,7 +455,10 @@ async function part7_adminProtection() {
     const r = await fetch(`${BASE_URL}${route.path}`, {
       method: route.method,
       headers: { "Content-Type": "application/json" },
-      body: route.method === "POST" ? JSON.stringify({ decision: "approve" }) : undefined,
+      body:
+        route.method === "POST"
+          ? JSON.stringify({ decision: "approve" })
+          : undefined,
     });
     if (r.status === 401 || r.status === 403) {
       pass(`${route.label} → ${r.status} (blocked)`);
@@ -459,9 +474,13 @@ async function part7_adminProtection() {
       method: route.method,
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhdHRhY2tlciIsInJvbGVzIjpbImFkbWluIl0sInBlcm1pc3Npb25zIjpbImFkbWluOnJldmlldyJdfQ.forged_signature",
+        Authorization:
+          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhdHRhY2tlciIsInJvbGVzIjpbImFkbWluIl0sInBlcm1pc3Npb25zIjpbImFkbWluOnJldmlldyJdfQ.forged_signature",
       },
-      body: route.method === "POST" ? JSON.stringify({ decision: "approve" }) : undefined,
+      body:
+        route.method === "POST"
+          ? JSON.stringify({ decision: "approve" })
+          : undefined,
     });
     if (r.status === 401 || r.status === 403) {
       pass(`${route.label} rejects forged token → ${r.status}`);
@@ -477,14 +496,20 @@ async function part7_adminProtection() {
       method: route.method,
       headers: {
         "Content-Type": "application/json",
-        "Cookie": "appSession=tampered.garbage.value",
+        Cookie: "appSession=tampered.garbage.value",
       },
-      body: route.method === "POST" ? JSON.stringify({ decision: "approve" }) : undefined,
+      body:
+        route.method === "POST"
+          ? JSON.stringify({ decision: "approve" })
+          : undefined,
     });
     if (r.status === 401 || r.status === 403) {
       pass(`${route.label} rejects tampered cookie → ${r.status}`);
     } else {
-      fail(`${route.label} should reject tampered cookie`, `Got HTTP ${r.status}`);
+      fail(
+        `${route.label} should reject tampered cookie`,
+        `Got HTTP ${r.status}`,
+      );
     }
   }
 }

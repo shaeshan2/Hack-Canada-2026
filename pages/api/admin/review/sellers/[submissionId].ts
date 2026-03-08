@@ -3,11 +3,17 @@ import "../../../../../lib/auth0-env";
 import { Role, VerificationStatus } from "@prisma/client";
 import { auth0 } from "../../../../../lib/auth0";
 import { prisma } from "../../../../../lib/prisma";
-import { requireAdminUser, withAdminRequired } from "../../../../../lib/admin-guard";
+import {
+  requireAdminUser,
+  withAdminRequired,
+} from "../../../../../lib/admin-guard";
 import { assignAuth0RoleToUser } from "../../../../../lib/auth0-management";
 import { sendTransactionalEmail } from "../../../../../lib/notifications";
 
-export default withAdminRequired(async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default withAdminRequired(async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     res.status(405).json({ error: "Method not allowed" });
@@ -31,7 +37,7 @@ export default withAdminRequired(async function handler(req: NextApiRequest, res
 
   const submission = await prisma.sellerVerificationSubmission.findUnique({
     where: { id: submissionId },
-    include: { user: true }
+    include: { user: true },
   });
   if (!submission) {
     res.status(404).json({ error: "Submission not found" });
@@ -48,18 +54,22 @@ export default withAdminRequired(async function handler(req: NextApiRequest, res
     const updatedSubmission = await tx.sellerVerificationSubmission.update({
       where: { id: submission.id },
       data: {
-        status: decision === "approve" ? VerificationStatus.APPROVED : VerificationStatus.REJECTED,
+        status:
+          decision === "approve"
+            ? VerificationStatus.APPROVED
+            : VerificationStatus.REJECTED,
         rejectionReason: decision === "reject" ? String(reason) : null,
         reviewedAt,
-        reviewedById: adminUser.id
-      }
+        reviewedById: adminUser.id,
+      },
     });
 
     const updatedUser = await tx.user.update({
       where: { id: submission.userId },
       data: {
-        role: decision === "approve" ? Role.SELLER_VERIFIED : Role.SELLER_PENDING
-      }
+        role:
+          decision === "approve" ? Role.SELLER_VERIFIED : Role.SELLER_PENDING,
+      },
     });
 
     return { updatedSubmission, updatedUser };
@@ -68,7 +78,10 @@ export default withAdminRequired(async function handler(req: NextApiRequest, res
   let auth0RoleSync: { applied?: boolean; reason?: string } = {};
   if (decision === "approve") {
     try {
-      auth0RoleSync = await assignAuth0RoleToUser(result.updatedUser.auth0Id, "seller_verified");
+      auth0RoleSync = await assignAuth0RoleToUser(
+        result.updatedUser.auth0Id,
+        "seller_verified",
+      );
     } catch (error) {
       auth0RoleSync = { reason: (error as Error).message };
     }
@@ -85,7 +98,7 @@ export default withAdminRequired(async function handler(req: NextApiRequest, res
       text:
         decision === "approve"
           ? "Your account is now seller_verified and you can create listings."
-          : `Your verification was rejected. Reason: ${String(reason)}. You can re-upload documents from your dashboard.`
+          : `Your verification was rejected. Reason: ${String(reason)}. You can re-upload documents from your dashboard.`,
     });
   } catch (error) {
     emailStatus = { reason: (error as Error).message };
@@ -95,6 +108,6 @@ export default withAdminRequired(async function handler(req: NextApiRequest, res
     submission: result.updatedSubmission,
     user: { id: result.updatedUser.id, role: result.updatedUser.role },
     auth0RoleSync,
-    emailStatus
+    emailStatus,
   });
 });
