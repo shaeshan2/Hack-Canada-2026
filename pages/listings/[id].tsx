@@ -6,12 +6,11 @@ import { useState, useEffect } from "react";
 import "../../lib/auth0-env";
 import { auth0 } from "../../lib/auth0";
 import { ensureDbUser } from "../../lib/session-user";
-import {
-  clearSignupIntentCookie,
-  getSignupIntentRole,
-} from "../../lib/signup-intent";
+import { clearSignupIntentCookie, getSignupIntentRole } from "../../lib/signup-intent";
 import { prisma } from "../../lib/prisma";
 import dynamic from "next/dynamic";
+import fs from "fs";
+import path from "path";
 import FraudBreakdownCard from "../../components/FraudBreakdownCard";
 import type { NeighborhoodData } from "../api/listings/[id]/neighborhood";
 import type { ListingDetailProps, PriceEstimateResult } from "../../types";
@@ -62,7 +61,8 @@ function confidenceInfo(score: number | null) {
 export default function ListingDetailPage({
   listing,
   user,
-}: ListingDetailProps) {
+  videoUrl,
+}: ListingDetailProps & { videoUrl?: string | null }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [neighborhood, setNeighborhood] = useState<NeighborhoodData | null>(
     null,
@@ -487,6 +487,16 @@ export default function ListingDetailPage({
                 )}
               </div>
 
+              <a
+                href={videoUrl || "https://youriguide.com/wdd5g_285_sedgewood_st_kitchener_on/"}
+                target="_blank"
+                rel="noreferrer"
+                className="ld-cta-secondary"
+                style={{ marginBottom: "12px", borderStyle: "dashed", display: "block", textAlign: "center" }}
+              >
+                🕶️ Virtual Tour
+              </a>
+
               {user ? (
                 <>
                   <Link
@@ -575,8 +585,30 @@ export const getServerSideProps: GetServerSideProps<
     user = { name: session.user.name, email: session.user.email };
   }
 
+  let videoUrl: string | null = null;
+  try {
+    const newest = await prisma.listing.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+
+    if (newest?.id === listing.id) {
+      const videosDir = path.join(process.cwd(), "public", "videos");
+      if (fs.existsSync(videosDir)) {
+        const files = fs.readdirSync(videosDir);
+        const videoFile = files.find(f => f.endsWith(".mp4") || f.endsWith(".webm") || f.endsWith(".mov"));
+        if (videoFile) {
+          videoUrl = `/videos/${videoFile}`;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error checking virtual tour video:", err);
+  }
+
   return {
     props: {
+      videoUrl,
       listing: {
         id: listing.id,
         title: listing.title,
