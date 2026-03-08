@@ -14,19 +14,40 @@ export default async function handler(
   res: NextApiResponse,
 ) {
   if (req.method === "GET") {
+    // Check if there's a logged-in user to fetch their saved items
+    const session = await auth0.getSession(req);
+    let savedListingIds = new Set<string>();
+
+    if (session?.user) {
+      const signupRole = getSignupIntentRole(req);
+      const dbUser = await ensureDbUser(session.user, signupRole);
+      const saved = await prisma.savedListing.findMany({
+        where: { userId: dbUser.id },
+        select: { listingId: true },
+      });
+      savedListingIds = new Set(saved.map((s) => s.listingId));
+    }
+
     const listings = await prisma.listing.findMany({
       include: {
         seller: {
           select: {
             id: true,
             name: true,
+            role: true,
           },
         },
         photos: { orderBy: { order: "asc" } },
       },
       orderBy: { createdAt: "desc" },
     });
-    res.status(200).json(listings);
+
+    const listingsWithSaved = listings.map((l) => ({
+      ...l,
+      isSaved: savedListingIds.has(l.id),
+    }));
+
+    res.status(200).json(listingsWithSaved);
     return;
   }
 

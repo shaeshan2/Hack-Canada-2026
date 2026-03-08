@@ -447,6 +447,7 @@ export default function BrowsePage() {
                         listing={listing}
                         index={i}
                         showMessageSeller
+                        initialIsSaved={listing.isSaved}
                       />
                     );
                   })}

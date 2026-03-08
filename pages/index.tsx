@@ -174,6 +174,14 @@ export default function Home({ listings, user, role }: HomePageProps) {
                     </div>
                   </div>
                   <div className="nav-user-actions">
+                    {role === "BUYER" && (
+                      <a
+                        href="/saved"
+                        className="nav-btn nav-btn-ghost nav-btn-sm"
+                      >
+                        Saved
+                      </a>
+                    )}
                     {role === "SELLER_VERIFIED" && (
                       <a
                         href="/seller"
@@ -219,10 +227,10 @@ export default function Home({ listings, user, role }: HomePageProps) {
               &#9776;
             </button>
           </div>
-        </nav>
+        </nav >
 
         {/* ── Hero ────────────────────────────────── */}
-        <section className="hero">
+        < section className="hero" >
           <div className="hero-bg">
             <img src="/images/hero-bg.png" alt="" aria-hidden="true" />
           </div>
@@ -292,9 +300,9 @@ export default function Home({ listings, user, role }: HomePageProps) {
               </div>
             </div>
           </div>
-        </section>
+        </section >
         {/* ── Savings Calculator ──────────────────── */}
-        <section className="savings-section" ref={calcRef}>
+        < section className="savings-section" ref={calcRef} >
           <div className="section-inner">
             <div className="section-header animate-in">
               <div className="section-tag">Savings Calculator</div>
@@ -368,10 +376,10 @@ export default function Home({ listings, user, role }: HomePageProps) {
               </div>
             </div>
           </div>
-        </section>
+        </section >
 
         {/* ── Listings ────────────────────────────── */}
-        <section className="listings-section" id="listings">
+        < section className="listings-section" id="listings" >
           <div className="section-inner">
             <div className="section-header animate-in">
               <div className="section-tag">Live Listings</div>
@@ -406,10 +414,10 @@ export default function Home({ listings, user, role }: HomePageProps) {
               </div>
             )}
           </div>
-        </section>
+        </section >
 
         {/* ── Why Choose DeedScan ─────────────────── */}
-        <section className="why-deedscan-section">
+        < section className="why-deedscan-section" >
           <div className="section-inner">
             <div className="section-header animate-in">
               <div className="section-tag">Trust &amp; Safety</div>
@@ -457,10 +465,10 @@ export default function Home({ listings, user, role }: HomePageProps) {
               </div>
             </div>
           </div>
-        </section>
+        </section >
 
         {/* ── How It Works ────────────────────────── */}
-        <section className="how-section" id="how-it-works">
+        < section className="how-section" id="how-it-works" >
           <div className="section-inner">
             <div className="section-header animate-in">
               <div className="section-tag">How It Works</div>
@@ -511,10 +519,10 @@ export default function Home({ listings, user, role }: HomePageProps) {
               ))}
             </div>
           </div>
-        </section>
+        </section >
 
         {/* ── For Buyers ──────────────────────────── */}
-        <section className="value-section" id="for-buyers">
+        < section className="value-section" id="for-buyers" >
           <div className="section-inner">
             <div className="section-header animate-in">
               <div className="section-tag">For Buyers</div>
@@ -547,13 +555,14 @@ export default function Home({ listings, user, role }: HomePageProps) {
               })}
             </div>
           </div>
-        </section>
+        </section >
 
         {/* ── For Sellers ─────────────────────────── */}
-        <section
+        < section
           className="value-section"
           id="for-sellers"
-          style={{ background: "var(--bg-primary)" }}
+          style={{ background: "var(--bg-primary)" }
+          }
         >
           <div className="section-inner">
             <div className="section-header animate-in">
@@ -586,7 +595,7 @@ export default function Home({ listings, user, role }: HomePageProps) {
               })}
             </div>
           </div>
-        </section>
+        </section >
         {/* ── Footer CTA ─────────────────────────── */}
         {!user && <FooterCta />}
 
@@ -603,50 +612,52 @@ export default function Home({ listings, user, role }: HomePageProps) {
             </div>
           </div>
         </footer>
-      </div>
+      </div >
 
       {/* ── Role Selection Modal ───────────────── */}
-      {showRoleModal && (
-        <div
-          className="role-modal-overlay"
-          onClick={() => setShowRoleModal(false)}
-        >
-          <div className="role-modal" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="role-modal-close"
-              onClick={() => setShowRoleModal(false)}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-            <div className="role-modal-header">
-              <h2>How will you use DeedScan?</h2>
-              <p>
-                Choose your role to get started — you can always explore both
-                later.
-              </p>
-            </div>
-            <div className="role-cards">
-              <a href="/api/auth/signup-buyer" className="role-card">
-                <h3>I&apos;m a Buyer</h3>
+      {
+        showRoleModal && (
+          <div
+            className="role-modal-overlay"
+            onClick={() => setShowRoleModal(false)}
+          >
+            <div className="role-modal" onClick={(e) => e.stopPropagation()}>
+              <button
+                className="role-modal-close"
+                onClick={() => setShowRoleModal(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+              <div className="role-modal-header">
+                <h2>How will you use DeedScan?</h2>
                 <p>
-                  Browse listings, message sellers directly, and find your next
-                  home commission-free.
+                  Choose your role to get started — you can always explore both
+                  later.
                 </p>
-                <span className="role-card-arrow">Get started →</span>
-              </a>
-              <a href="/api/auth/signup-seller" className="role-card">
-                <h3>I&apos;m a Seller</h3>
-                <p>
-                  List your property, get a QR yard sign, and keep 100% of your
-                  sale — zero commission.
-                </p>
-                <span className="role-card-arrow">Get started →</span>
-              </a>
+              </div>
+              <div className="role-cards">
+                <a href="/api/auth/signup-buyer" className="role-card">
+                  <h3>I&apos;m a Buyer</h3>
+                  <p>
+                    Browse listings, message sellers directly, and find your next
+                    home commission-free.
+                  </p>
+                  <span className="role-card-arrow">Get started →</span>
+                </a>
+                <a href="/api/auth/signup-seller" className="role-card">
+                  <h3>I&apos;m a Seller</h3>
+                  <p>
+                    List your property, get a QR yard sign, and keep 100% of your
+                    sale — zero commission.
+                  </p>
+                  <span className="role-card-arrow">Get started →</span>
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   );
 }

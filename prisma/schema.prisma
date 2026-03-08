@@ -44,6 +44,7 @@ model User {
   verificationSubmissions SellerVerificationSubmission[] @relation("SellerVerificationUser")
   reviewedVerifications   SellerVerificationSubmission[] @relation("SellerVerificationReviewer")
   reviewedFraudFlags      FraudFlag[]                    @relation("FraudFlagReviewer")
+  savedListings     SavedListing[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -65,6 +66,7 @@ model Listing {
   sellerId        String
   seller          User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   fraudFlag       FraudFlag?
+  savedBy         SavedListing[]
   photos          Photo[]
   messages        Message[]
   createdAt       DateTime @default(now())
@@ -122,4 +124,15 @@ model FraudFlag {
   reviewedAt        DateTime?
   reviewedById      String?
   reviewedBy        User?           @relation("FraudFlagReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+}
+
+model SavedListing {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
 }

@@ -19,6 +19,7 @@ export type ListingCardData = {
   imageUrl: string | null;
   createdAt: string;
   seller: ListingSeller;
+  isSaved?: boolean;
 };
 
 export type HomePageProps = {
