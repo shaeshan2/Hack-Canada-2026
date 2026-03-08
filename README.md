@@ -59,9 +59,11 @@ Fill in Auth0 values. See `.env.example` for all required and optional variables
 
 In Auth0 → Application settings:
 
-- Allowed Callback URLs: `http://localhost:3000/api/auth/callback`
+- Allowed Callback URLs: `http://localhost:3000/auth/callback`
 - Allowed Logout URLs: `http://localhost:3000`
 - Allowed Web Origins: `http://localhost:3000`
+
+> **Note:** Auth routes are handled by `proxy.ts` middleware (Next.js 16). Do **not** set `AUTH0_AUDIENCE` in `.env` — it is not required and will cause login to fail.
 
 ### 3. Set up the database
 
@@ -107,12 +109,9 @@ Open `http://localhost:3000`.
 
 `/admin/review` — seller verification queue and flagged listing review.
 
-Access requires **both**:
+Access requires the `ADMIN` role in the DB. When `AUTH0_AUDIENCE` is not set (the default dev setup), the DB role is the sole authority — no Auth0 role configuration needed.
 
-1. Auth0 `admin` role with `admin:review` permission in the access token
-2. `ADMIN` role in the DB
-
-Promote a user (syncs both):
+Promote a user:
 
 ```bash
 npm run promote:admin -- <email>
@@ -120,12 +119,13 @@ npm run promote:admin -- <email>
 
 The user must log out and back in after promotion.
 
-**Auth0 setup required:**
+**Optional full Auth0 RBAC setup** (production only):
 
-- Dashboard → APIs → create a Custom API, identifier = `AUTH0_AUDIENCE` value (e.g. `http://localhost:3000`)
+- Dashboard → APIs → create a Custom API, set its identifier as `AUTH0_AUDIENCE` in `.env`
 - Add permission `admin:review` to that API
 - API Settings: enable **RBAC** and **Add Permissions in the Access Token**
 - The M2M app (`AUTH0_M2M_CLIENT_ID/SECRET`) needs Management API scopes: `read:users`, `read:roles`, `create:roles`, `update:roles`, `create:role_members`
+- Run `npm run promote:admin -- <email>` to sync both Auth0 role and DB
 
 ---
 
@@ -175,7 +175,11 @@ Full reference: [docs/API.md](docs/API.md)
 ## Auth0 tenant setup checklist
 
 - [ ] Configure application callback / logout / origin URLs
-- [ ] Create a Custom API with identifier = `AUTH0_AUDIENCE`; add `admin:review` permission; enable RBAC + Add Permissions in Access Token
-- [ ] Create roles: `buyer`, `seller_pending`, `seller_verified`, `admin`
-- [ ] Create an M2M application authorized on the Management API with user/role scopes
+  - Callback: `http://localhost:3000/auth/callback`
+  - Logout: `http://localhost:3000`
+  - Web Origins: `http://localhost:3000`
+- [ ] Do **not** set `AUTH0_AUDIENCE` for local dev — remove it from `.env` if present
+- [ ] _(Production only)_ Create a Custom API with a proper identifier as `AUTH0_AUDIENCE`; add `admin:review` permission; enable RBAC + Add Permissions in Access Token
+- [ ] _(Production only)_ Create roles: `buyer`, `seller_pending`, `seller_verified`, `admin`
+- [ ] _(Production only)_ Create an M2M application authorized on the Management API with user/role scopes
 - [ ] Add a Post Login Action to block flagged users

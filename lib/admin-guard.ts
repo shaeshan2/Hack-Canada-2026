@@ -46,7 +46,13 @@ export async function requireAdminUser(
     }
   }
 
-  if (!auth0Admin || !hasAdminScope) {
+  // When AUTH0_AUDIENCE is not configured, fall back to DB role so that
+  // users promoted via `npm run promote:admin` (DB only) can still access admin.
+  const isAdmin =
+    (auth0Admin && hasAdminScope) ||
+    (!process.env.AUTH0_AUDIENCE && dbUser.role === Role.ADMIN);
+
+  if (!isAdmin) {
     res.status(403).json({ error: "Admin role required" });
     return null;
   }
