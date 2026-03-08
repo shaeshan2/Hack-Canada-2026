@@ -47,9 +47,11 @@ export async function requireAdminUser(
     }
   }
 
+  // DB fallback (dev mode): DB-promoted admins bypass the scope check, matching
+  // the page-level getServerSideProps guard which also doesn't check hasAdminScope.
   const isAdmin =
-    (auth0Admin || (allowDbFallback && dbUser.role === Role.ADMIN)) &&
-    hasAdminScope;
+    (auth0Admin && hasAdminScope) ||
+    (allowDbFallback && dbUser.role === Role.ADMIN);
   if (!isAdmin) {
     res.status(403).json({ error: "Admin role required" });
     return null;
