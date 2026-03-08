@@ -13,9 +13,9 @@ type VerifyProps = {
   role?: string;
   submission?: {
     status: string;
-    rejectionReason?: string;
-    aiAnalysis?: string;
-    aiConfidence?: number;
+    rejectionReason?: string | null;
+    aiAnalysis?: string | null;
+    aiConfidence?: number | null;
   } | null;
 };
 
@@ -106,11 +106,8 @@ export default function SellerVerifyPage({
       return;
     }
 
-    const aiNote = result.aiVerification
-      ? ` AI analysis (${result.aiVerification.confidence}% confidence): ${result.aiVerification.reason}`
-      : "";
     setMessage(
-      `Documents submitted.${aiNote} An admin will review your verification shortly.`,
+      "Documents submitted. An admin will review your verification shortly."
     );
     if (govIdRef.current) govIdRef.current.value = "";
     if (ownershipRef.current) ownershipRef.current.value = "";
@@ -254,7 +251,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const session = await auth0.getSession(context.req);
   let user: { name?: string; email?: string } | null = null;
   let role: string | null = null;
-  let submission: { status: string; rejectionReason?: string; aiAnalysis?: string; aiConfidence?: number } | null = null;
+  let submission: { status: string; rejectionReason?: string | null; aiAnalysis?: string | null; aiConfidence?: number | null } | null = null;
 
   if (session?.user) {
     const signupRole = getSignupIntentRole(context.req);
@@ -270,9 +267,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       if (latest) {
         submission = {
           status: latest.status,
-          rejectionReason: latest.rejectionReason ?? undefined,
-          aiAnalysis: latest.aiAnalysis ?? undefined,
-          aiConfidence: latest.aiConfidence ?? undefined,
+          rejectionReason: latest.rejectionReason ?? null,
+          aiAnalysis: latest.aiAnalysis ?? null,
+          aiConfidence: latest.aiConfidence ?? null,
         };
       }
     } catch (err) {
