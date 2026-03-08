@@ -6,6 +6,8 @@ import { auth0 } from "../../lib/auth0";
 import { ensureDbUser } from "../../lib/session-user";
 import { getSignupIntentRole } from "../../lib/signup-intent";
 import { hasAuth0AdminRole } from "../../lib/auth0-roles";
+import Image from "next/image";
+
 
 const PdfViewer = dynamic(
   () => import("../../components/pdf-viewer").then((m) => m.PdfViewer),
@@ -888,10 +890,15 @@ function AdminReviewPage({ adminName }: Props) {
         {/* ── Navbar ── */}
         <nav className="ar-nav">
           <a href="/" className="ar-nav-brand">
-            <span className="ar-nav-logo-icon">🏠</span>
-            DeedScan
-            <span className="ar-admin-badge">Admin</span>
+            <Image
+              src="/images/deedscan-nobg.png"
+              alt="DeedScan logo"
+              width={32}
+              height={32}
+            />
+            <span>DeedScan</span>
           </a>
+            <span className="ar-admin-badge">Admin</span>
           <div className="ar-nav-right">
             <div className="ar-nav-user">
               <div className="ar-avatar">
